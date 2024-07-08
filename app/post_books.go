@@ -82,7 +82,7 @@ func (a *App) PostBooks(api huma.API) {
 		bookID := uuid.New()
 
 		err := sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			_, err := insertBook.Exec(ctx, db, map[string]any{
+			_, err := sqlt.Exec(ctx, db, insertBook, map[string]any{
 				"ID":            bookID,
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
@@ -92,7 +92,7 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			_, err = insertAuthors.Exec(ctx, db, input.Body.Authors)
+			_, err = sqlt.Exec(ctx, db, insertAuthors, input.Body.Authors)
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			_, err = insertBookAuthors.Exec(ctx, db, map[string]any{
+			_, err = sqlt.Exec(ctx, db, insertBookAuthors, map[string]any{
 				"AuthorIDs": authorIDs,
 				"BookID":    bookID,
 			})

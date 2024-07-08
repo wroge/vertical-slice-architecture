@@ -28,11 +28,16 @@ type App struct {
 func (a *App) Run() {
 	a.Template.Funcs(sprig.TxtFuncMap())
 
-	a.Template.New("create").MustParse(`
+	create := a.Template.New("create").MustParse(`
 		CREATE TABLE IF NOT EXISTS books (id NOT NULL, title NOT NULL, number_of_pages NOT NULL, published_at DATE NOT NULL);
 		CREATE TABLE IF NOT EXISTS authors (id NOT NULL, name UNIQUE NOT NULL);
 		CREATE TABLE IF NOT EXISTS book_authors (book_id NOT NULL, author_id NOT NULL);
-	`).Exec(context.Background(), a.DB, nil)
+	`)
+
+	_, err := sqlt.Exec(context.Background(), a.DB, create, nil)
+	if err != nil {
+		a.Logger.Panic(err)
+	}
 
 	cli := humacli.New(func(hooks humacli.Hooks, options *Options) {
 		router := http.NewServeMux()
