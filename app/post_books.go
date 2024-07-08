@@ -35,24 +35,27 @@ func (a *App) PostBooks(api huma.API) {
 	insertAuthors := a.Template.New("insert_authors").MustParse(`
 		INSERT INTO authors (id, name) VALUES
 		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
-			{{ sqlt.Expr "(?, ?)" uuidv4 $a }}
+			({{ uuidv4 }}, {{ $a }})
 		{{ end }}
 		ON CONFLICT (name) DO NOTHING;;
 	`)
 
 	queryAuthors := a.Template.New("query_authors").MustParse(`
-		SELECT id FROM authors WHERE name IN({{ sqlt.Join . "," }});
+		SELECT id FROM authors WHERE name IN(
+		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
+			{{ $a }}
+		{{ end }});
 	`)
 
 	insertBook := a.Template.New("insert_book").MustParse(`
 		INSERT INTO books (id, title, number_of_pages, published_at) VALUES
-			{{ sqlt.Expr "(?, ?, ?, ?)" .ID .Title .NumberOfPages .PublishedAt }}
+			({{ .ID }},{{ .Title }},{{ .NumberOfPages }},{{ .PublishedAt }})
 	`)
 
 	insertBookAuthors := a.Template.New("insert_book_authors").MustParse(`
 		INSERT INTO book_authors (book_id, author_id) VALUES
 		{{ range $i, $a := .AuthorIDs }} {{ if $i }}, {{ end }}
-			{{ sqlt.Expr "(?, ?)" $.BookID $a }}
+			({{ $.BookID }}, {{ $a }})
 		{{ end }};
 	`)
 
