@@ -13,14 +13,14 @@ import (
 func (a *App) PostBooks(api huma.API) {
 	type (
 		PostBooksInputBody struct {
-			Title         string
-			NumberOfPages int64
-			Authors       []string
-			PublishedAt   time.Time
+			Title         string    `json:"title" required:"true"`
+			NumberOfPages int64     `json:"number_of_pages" required:"true"`
+			Authors       []string  `json:"authors" required:"true"`
+			PublishedAt   time.Time `json:"published_at" required:"true"`
 		}
 
 		PostBooksOutputBody struct {
-			ID uuid.UUID
+			ID uuid.UUID `json:"id" required:"true"`
 		}
 
 		Input struct {

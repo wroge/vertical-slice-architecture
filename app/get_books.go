@@ -13,16 +13,16 @@ import (
 func (a *App) GetBooks(api huma.API) {
 	type (
 		Author struct {
-			ID   uuid.UUID `json:"id"`
-			Name string    `json:"name"`
+			ID   uuid.UUID `json:"id" required:"true"`
+			Name string    `json:"name" required:"true"`
 		}
 
 		Book struct {
-			ID            uuid.UUID           `json:"id"`
-			Title         string              `json:"title"`
-			NumberOfPages int64               `json:"number_of_pages"`
-			Authors       sqlt.JSON[[]Author] `json:"authors,omitempty"`
-			PublishedAt   time.Time           `json:"published_at"`
+			ID            uuid.UUID            `json:"id" required:"true"`
+			Title         string               `json:"title" doc:"Title" example:"Titel" required:"true"`
+			NumberOfPages int64                `json:"number_of_pages" required:"true"`
+			Authors       sqlt.Value[[]Author] `json:"authors,omitempty" required:"true"`
+			PublishedAt   time.Time            `json:"published_at" required:"true"`
 		}
 
 		Input struct {
@@ -34,12 +34,12 @@ func (a *App) GetBooks(api huma.API) {
 		}
 
 		GetBooksOutputBody struct {
-			Total int64  `json:"total"`
-			Books []Book `json:"books"`
+			Total int64  `json:"total" required:"true"`
+			Books []Book `json:"books" required:"true"`
 		}
 
 		Output struct {
-			Body GetBooksOutputBody
+			Body GetBooksOutputBody `contentType:"application/json" required:"true"`
 		}
 	)
 
@@ -69,7 +69,7 @@ func (a *App) GetBooks(api huma.API) {
 			{{ sqlt.String Dest.Title "books.title" }},
 			{{ sqlt.Int64 Dest.NumberOfPages "books.number_of_pages" }},
 			{{ sqlt.Time Dest.PublishedAt "books.published_at" }},
-			{{ sqlt.Scanner Dest.Authors "json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
+			{{ sqlt.JSON Dest.Authors "json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
