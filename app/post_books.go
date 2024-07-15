@@ -97,7 +97,7 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			authorIDs, err := sqlt.All[uuid.UUID](ctx, db, queryAuthors, input.Body.Authors)
+			authorIDs, err := sqlt.QueryAll[uuid.UUID](ctx, db, queryAuthors, input.Body.Authors)
 			if err != nil {
 				return err
 			}
