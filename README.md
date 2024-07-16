@@ -9,7 +9,7 @@ go run ./cmd/sqlite/main.go
 
 
 // Or run as postgres app with docker
-docker run --name postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=db -p 5432:5432 postgres:16
+docker run --name postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=db -p 5432:5432 -d postgres:16
 go run ./cmd/postgres/main.go
 // open: http://localhost:8080/docs
 
