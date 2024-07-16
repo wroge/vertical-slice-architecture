@@ -49,7 +49,8 @@ func (a *App) PostBooks(api huma.API) {
 
 	insertBook := a.Template.New("insert_book").MustParse(`
 		INSERT INTO books (id, title, number_of_pages, published_at) VALUES
-			({{ .ID }},{{ .Title }},{{ .NumberOfPages }},{{ .PublishedAt }})
+			({{ uuidv4 }},{{ .Title }},{{ .NumberOfPages }},{{ .PublishedAt }})
+		RETURNING id;
 	`)
 
 	insertBookAuthors := a.Template.New("insert_book_authors").MustParse(`
@@ -79,11 +80,13 @@ func (a *App) PostBooks(api huma.API) {
 			return nil, huma.Error400BadRequest("please provide an author")
 		}
 
-		bookID := uuid.New()
+		var (
+			id  uuid.UUID
+			err error
+		)
 
-		err := sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			_, err := sqlt.Exec(ctx, db, insertBook, map[string]any{
-				"ID":            bookID,
+		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
+			id, err = sqlt.QueryFirst[uuid.UUID](ctx, db, insertBook, map[string]any{
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
 				"PublishedAt":   input.Body.PublishedAt,
@@ -104,7 +107,7 @@ func (a *App) PostBooks(api huma.API) {
 
 			_, err = sqlt.Exec(ctx, db, insertBookAuthors, map[string]any{
 				"AuthorIDs": authorIDs,
-				"BookID":    bookID,
+				"BookID":    id,
 			})
 			if err != nil {
 				return err
@@ -120,7 +123,7 @@ func (a *App) PostBooks(api huma.API) {
 
 		return &Output{
 			Body: PostBooksOutputBody{
-				ID: bookID,
+				ID: id,
 			},
 		}, nil
 	})
