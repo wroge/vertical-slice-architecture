@@ -22,6 +22,13 @@ docker stop postgres && docker rm postgres
 - [https://www.jimmybogard.com/vertical-slice-architecture/](https://www.jimmybogard.com/vertical-slice-architecture/)
 - [https://www.milanjovanovic.tech/blog/vertical-slice-architecture](https://www.milanjovanovic.tech/blog/vertical-slice-architecture)
 
+## The Slices
+
+> Minimize coupling between slices, and maximize coupling in a slice.
+
+- Query, Paginate, Search Books: [app/get_books.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books.go)
+- Insert Book: [app/post_books.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/post_books.go)
+
 ## Highlights
 
 - Huma is a great framework for OpenAPI generation and validation that works with any web framework.
