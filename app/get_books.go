@@ -44,12 +44,22 @@ func (a *App) GetBooks(api huma.API) {
 	)
 
 	a.Template.New("search_filter").MustParse(` 
-		instr(books.title, {{ . }}) > 0 OR
+		{{ if eq Dialect "postgres" }}
+			POSITION({{ . }} IN books.title) > 0
+		{{ else }}
+			instr(books.title, {{ . }}) > 0
+		{{ end }}
+		OR
 		books.id IN (
 			SELECT book_authors.book_id
 			FROM book_authors
 			JOIN authors ON authors.id = book_authors.author_id
-			WHERE instr(authors.name, {{ . }}) > 0
+			WHERE 
+			{{ if eq Dialect "postgres" }}
+				POSITION({{ . }} IN authors.name) > 0
+			{{ else }}
+				instr(authors.name, {{ . }}) > 0
+			{{ end }}
 		)
 	`)
 
@@ -69,7 +79,11 @@ func (a *App) GetBooks(api huma.API) {
 			{{ sqlt.String Dest.Title "books.title" }},
 			{{ sqlt.Int64 Dest.NumberOfPages "books.number_of_pages" }},
 			{{ sqlt.Time Dest.PublishedAt "books.published_at" }},
-			{{ sqlt.JSON Dest.Authors "json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
+			{{ if eq Dialect "postgres" }}
+				{{ sqlt.JSON Dest.Authors "json_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
+			{{ else }}
+				{{ sqlt.JSON Dest.Authors "json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
+			{{ end }}
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id

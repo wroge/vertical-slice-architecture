@@ -29,9 +29,21 @@ func (a *App) Run() {
 	a.Template.Funcs(sprig.TxtFuncMap())
 
 	create := a.Template.New("create").MustParse(`
-		CREATE TABLE IF NOT EXISTS books (id NOT NULL, title NOT NULL, number_of_pages NOT NULL, published_at DATE NOT NULL);
-		CREATE TABLE IF NOT EXISTS authors (id NOT NULL, name UNIQUE NOT NULL);
-		CREATE TABLE IF NOT EXISTS book_authors (book_id NOT NULL, author_id NOT NULL);
+		CREATE TABLE IF NOT EXISTS books (
+			id TEXT PRIMARY KEY, 
+			title TEXT NOT NULL, 
+			number_of_pages INTEGER NOT NULL, 
+			published_at {{ if eq Dialect "postgres" }}TIMESTAMPTZ{{ else }}DATE{{ end }} NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS authors (
+			id TEXT PRIMARY KEY, 
+			name TEXT UNIQUE NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS book_authors (
+			book_id TEXT NOT NULL, 
+			author_id TEXT NOT NULL,
+			PRIMARY KEY (book_id, author_id)
+		);		
 	`)
 
 	_, err := sqlt.Exec(context.Background(), a.DB, create, nil)
