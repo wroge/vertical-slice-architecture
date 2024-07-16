@@ -17,6 +17,11 @@ go run ./cmd/postgres/main.go
 docker stop postgres && docker rm postgres
 ```
 
+## What is Vertical Slice Architecture?
+
+- [https://www.jimmybogard.com/vertical-slice-architecture/](https://www.jimmybogard.com/vertical-slice-architecture/)
+- [https://www.milanjovanovic.tech/blog/vertical-slice-architecture](https://www.milanjovanovic.tech/blog/vertical-slice-architecture)
+
 ## Highlights
 
 - Huma is a great framework for OpenAPI generation and validation that works with any web framework.
