@@ -22,9 +22,9 @@ docker stop postgres && docker rm postgres
 - [https://www.jimmybogard.com/vertical-slice-architecture/](https://www.jimmybogard.com/vertical-slice-architecture/)
 - [https://www.milanjovanovic.tech/blog/vertical-slice-architecture](https://www.milanjovanovic.tech/blog/vertical-slice-architecture)
 
-## The Slices
+> Minimize coupling between slices, and maximize coupling in a slice. (Jimmy Bogard)
 
-> Minimize coupling between slices, and maximize coupling in a slice.
+## The Slices
 
 - Query, Paginate, Search Books: [app/get_books.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books.go)
 - Insert Book: [app/post_books.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/post_books.go)
