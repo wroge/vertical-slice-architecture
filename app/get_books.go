@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -10,19 +11,33 @@ import (
 	"github.com/wroge/sqlt"
 )
 
+type Author struct {
+	ID   uuid.UUID `json:"id" required:"true"`
+	Name string    `json:"name" required:"true"`
+}
+
+type Authors []Author
+
+func (a *Authors) UnmarshalJSON(data []byte) error {
+	var into []Author
+
+	if err := json.Unmarshal(data, &into); err != nil {
+		return err
+	}
+
+	*a = into
+
+	return nil
+}
+
 func (a *App) GetBooks(api huma.API) {
 	type (
-		Author struct {
-			ID   uuid.UUID `json:"id" required:"true"`
-			Name string    `json:"name" required:"true"`
-		}
-
 		Book struct {
-			ID            uuid.UUID            `json:"id" required:"true"`
-			Title         string               `json:"title" doc:"Title" example:"Titel" required:"true"`
-			NumberOfPages int64                `json:"number_of_pages" required:"true"`
-			Authors       sqlt.Value[[]Author] `json:"authors,omitempty" required:"true"`
-			PublishedAt   time.Time            `json:"published_at" required:"true"`
+			ID            uuid.UUID `json:"id" required:"true"`
+			Title         string    `json:"title" doc:"Title" example:"Titel" required:"true"`
+			NumberOfPages int64     `json:"number_of_pages" required:"true"`
+			Authors       Authors   `json:"authors,omitempty" required:"true"`
+			PublishedAt   time.Time `json:"published_at" required:"true"`
 		}
 
 		Input struct {
