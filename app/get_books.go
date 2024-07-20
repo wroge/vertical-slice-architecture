@@ -11,12 +11,27 @@ import (
 	"github.com/wroge/sqlt"
 )
 
-type Author struct {
-	ID   uuid.UUID `json:"id" required:"true"`
-	Name string    `json:"name" required:"true"`
-}
+type (
+	Book struct {
+		ID            uuid.UUID `json:"id" required:"true"`
+		Title         string    `json:"title" doc:"Title" example:"Titel" required:"true"`
+		NumberOfPages int64     `json:"number_of_pages" required:"true"`
+		Authors       Authors   `json:"authors,omitempty" required:"true"`
+		PublishedAt   time.Time `json:"published_at" required:"true"`
+	}
 
-type Authors []Author
+	GetBooksOutputBody struct {
+		Total int64  `json:"total" required:"true"`
+		Books []Book `json:"books" required:"true"`
+	}
+
+	Author struct {
+		ID   uuid.UUID `json:"id" required:"true"`
+		Name string    `json:"name" required:"true"`
+	}
+
+	Authors []Author
+)
 
 func (a *Authors) UnmarshalJSON(data []byte) error {
 	var into []Author
@@ -32,25 +47,12 @@ func (a *Authors) UnmarshalJSON(data []byte) error {
 
 func (a *App) GetBooks(api huma.API) {
 	type (
-		Book struct {
-			ID            uuid.UUID `json:"id" required:"true"`
-			Title         string    `json:"title" doc:"Title" example:"Titel" required:"true"`
-			NumberOfPages int64     `json:"number_of_pages" required:"true"`
-			Authors       Authors   `json:"authors,omitempty" required:"true"`
-			PublishedAt   time.Time `json:"published_at" required:"true"`
-		}
-
 		Input struct {
 			Sort      string `query:"sort" doc:"Sort column" default:"id" enum:"id,title,number_of_pages,published_at"`
 			Direction string `query:"direction" doc:"direction" enum:"asc,desc"`
 			Search    string `query:"search" doc:"Search term"`
 			Limit     uint32 `query:"limit" doc:"Limit"`
 			Offset    uint32 `query:"offset" doc:"Offset"`
-		}
-
-		GetBooksOutputBody struct {
-			Total int64  `json:"total" required:"true"`
-			Books []Book `json:"books" required:"true"`
 		}
 
 		Output struct {

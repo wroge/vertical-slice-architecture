@@ -10,19 +10,21 @@ import (
 	"github.com/wroge/sqlt"
 )
 
+type (
+	PostBooksInputBody struct {
+		Title         string    `json:"title" required:"true"`
+		NumberOfPages int64     `json:"number_of_pages" required:"true"`
+		Authors       []string  `json:"authors" required:"true"`
+		PublishedAt   time.Time `json:"published_at" required:"true"`
+	}
+
+	PostBooksOutputBody struct {
+		ID uuid.UUID `json:"id" required:"true"`
+	}
+)
+
 func (a *App) PostBooks(api huma.API) {
 	type (
-		PostBooksInputBody struct {
-			Title         string    `json:"title" required:"true"`
-			NumberOfPages int64     `json:"number_of_pages" required:"true"`
-			Authors       []string  `json:"authors" required:"true"`
-			PublishedAt   time.Time `json:"published_at" required:"true"`
-		}
-
-		PostBooksOutputBody struct {
-			ID uuid.UUID `json:"id" required:"true"`
-		}
-
 		Input struct {
 			Body PostBooksInputBody
 		}
