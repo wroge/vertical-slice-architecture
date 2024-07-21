@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/wroge/sqlt v0.0.31
+	github.com/wroge/sqlt v0.0.32
 )
 
 require (
