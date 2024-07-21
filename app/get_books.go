@@ -80,7 +80,7 @@ func (a *App) GetBooks(api huma.API) {
 		)
 	`)
 
-	queryTotal := a.Template.New("query_total").MustParse(`
+	queryTotal := sqlt.Dest[int64](a.Template.New("query_total").MustParse(`
 		SELECT COUNT(*)
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
@@ -88,9 +88,9 @@ func (a *App) GetBooks(api huma.API) {
 		{{ if .Search }}
 			WHERE {{ template "search_filter" .Search }}
 		{{ end }};
-	`)
+	`))
 
-	query := a.Template.New("query").MustParse(`
+	query := sqlt.Dest[Book](a.Template.New("query").MustParse(`
 		SELECT
 			{{ sqlt.Scanner Dest.ID "books.id" }},
 			{{ sqlt.String Dest.Title "books.title" }},
@@ -131,7 +131,7 @@ func (a *App) GetBooks(api huma.API) {
 		{{ if .Offset }}
 			OFFSET {{ .Offset }}
 		{{ end }};
-	`)
+	`))
 
 	op := huma.Operation{
 		Method:          http.MethodGet,
@@ -145,14 +145,14 @@ func (a *App) GetBooks(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {
-		total, err := sqlt.FetchFirst[int64](ctx, a.DB, queryTotal, input)
+		total, err := queryTotal.QueryFirst(ctx, a.DB, input)
 		if err != nil {
 			a.Logger.Print(err)
 
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
-		books, err := sqlt.FetchAll[Book](ctx, a.DB, query, input)
+		books, err := query.QueryAll(ctx, a.DB, input)
 		if err != nil {
 			a.Logger.Print(err)
 

@@ -42,18 +42,18 @@ func (a *App) PostBooks(api huma.API) {
 		ON CONFLICT (name) DO NOTHING;;
 	`)
 
-	queryAuthors := a.Template.New("query_authors").MustParse(`
+	queryAuthors := sqlt.Dest[uuid.UUID](a.Template.New("query_authors").MustParse(`
 		SELECT id FROM authors WHERE name IN(
 		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
 			{{ $a }}
 		{{ end }});
-	`)
+	`))
 
-	insertBook := a.Template.New("insert_book").MustParse(`
+	insertBook := sqlt.Dest[uuid.UUID](a.Template.New("insert_book").MustParse(`
 		INSERT INTO books (id, title, number_of_pages, published_at) VALUES
 			({{ uuidv4 }},{{ .Title }},{{ .NumberOfPages }},{{ .PublishedAt }})
 		RETURNING id;
-	`)
+	`))
 
 	insertBookAuthors := a.Template.New("insert_book_authors").MustParse(`
 		INSERT INTO book_authors (book_id, author_id) VALUES
@@ -88,7 +88,7 @@ func (a *App) PostBooks(api huma.API) {
 		)
 
 		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			id, err = sqlt.FetchFirst[uuid.UUID](ctx, db, insertBook, map[string]any{
+			id, err = insertBook.QueryFirst(ctx, db, map[string]any{
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
 				"PublishedAt":   input.Body.PublishedAt,
@@ -102,7 +102,7 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			authorIDs, err := sqlt.FetchAll[uuid.UUID](ctx, db, queryAuthors, input.Body.Authors)
+			authorIDs, err := queryAuthors.QueryAll(ctx, db, input.Body.Authors)
 			if err != nil {
 				return err
 			}

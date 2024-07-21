@@ -25,16 +25,16 @@ func main() {
 	fmt.Println("Successfully connected to the database!")
 
 	app := app.App{
-		Template: sqlt.New("db", "?", false).Value("Dialect", "sqlite").HandleErr(func(err error, runner *sqlt.Runner) error {
-			if errors.Is(err, sql.ErrNoRows) {
+		Template: sqlt.New("db").Value("Dialect", "sqlite").HandleErr(func(err sqlt.Error) error {
+			if errors.Is(err.Err, sql.ErrNoRows) {
 				// ignore ErrNoRows
 				return nil
 			}
 
 			// Put logging logic here
-			fmt.Println(runner.SQL.String(), runner.Args)
+			fmt.Println(err.SQL, err.Args)
 
-			return err
+			return err.Err
 		}),
 		DB:     db,
 		Logger: log.New(os.Stdout, "book api - ", log.Ldate|log.Ltime|log.Lshortfile),

@@ -20,7 +20,7 @@ type Options struct {
 }
 
 type App struct {
-	Template *sqlt.Template
+	Template *sqlt.Template[any]
 	DB       *sql.DB
 	Logger   *log.Logger
 }
