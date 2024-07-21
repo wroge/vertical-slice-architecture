@@ -46,7 +46,7 @@ func (a *App) Run() {
 		);		
 	`)
 
-	_, err := sqlt.Exec(context.Background(), a.DB, create, nil)
+	_, err := create.Exec(context.Background(), a.DB, nil)
 	if err != nil {
 		a.Logger.Panic(err)
 	}

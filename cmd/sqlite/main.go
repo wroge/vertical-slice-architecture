@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
+	db, err := sql.Open("sqlite3", "file:test.db?cache=shared")
 	if err != nil {
 		panic(err)
 	}
@@ -24,9 +25,19 @@ func main() {
 	fmt.Println("Successfully connected to the database!")
 
 	app := app.App{
-		Template: sqlt.New("db", "?", false).Value("Dialect", "sqlite"),
-		DB:       db,
-		Logger:   log.New(os.Stdout, "book api - ", log.Ldate|log.Ltime|log.Lshortfile),
+		Template: sqlt.New("db", "?", false).Value("Dialect", "sqlite").HandleErr(func(err error, runner *sqlt.Runner) error {
+			if errors.Is(err, sql.ErrNoRows) {
+				// ignore ErrNoRows
+				return nil
+			}
+
+			// Put logging logic here
+			fmt.Println(runner.SQL.String(), runner.Args)
+
+			return err
+		}),
+		DB:     db,
+		Logger: log.New(os.Stdout, "book api - ", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 
 	app.Run()

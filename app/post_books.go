@@ -88,7 +88,7 @@ func (a *App) PostBooks(api huma.API) {
 		)
 
 		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			id, err = sqlt.QueryFirst[uuid.UUID](ctx, db, insertBook, map[string]any{
+			id, err = sqlt.FetchFirst[uuid.UUID](ctx, db, insertBook, map[string]any{
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
 				"PublishedAt":   input.Body.PublishedAt,
@@ -97,17 +97,17 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			_, err = sqlt.Exec(ctx, db, insertAuthors, input.Body.Authors)
+			_, err = insertAuthors.Exec(ctx, db, input.Body.Authors)
 			if err != nil {
 				return err
 			}
 
-			authorIDs, err := sqlt.QueryAll[uuid.UUID](ctx, db, queryAuthors, input.Body.Authors)
+			authorIDs, err := sqlt.FetchAll[uuid.UUID](ctx, db, queryAuthors, input.Body.Authors)
 			if err != nil {
 				return err
 			}
 
-			_, err = sqlt.Exec(ctx, db, insertBookAuthors, map[string]any{
+			_, err = insertBookAuthors.Exec(ctx, db, map[string]any{
 				"AuthorIDs": authorIDs,
 				"BookID":    id,
 			})

@@ -145,14 +145,14 @@ func (a *App) GetBooks(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {
-		total, err := sqlt.QueryFirst[int64](ctx, a.DB, queryTotal, input)
+		total, err := sqlt.FetchFirst[int64](ctx, a.DB, queryTotal, input)
 		if err != nil {
 			a.Logger.Print(err)
 
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
-		books, err := sqlt.QueryAll[Book](ctx, a.DB, query, input)
+		books, err := sqlt.FetchAll[Book](ctx, a.DB, query, input)
 		if err != nil {
 			a.Logger.Print(err)
 
