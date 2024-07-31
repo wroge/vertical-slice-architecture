@@ -10,21 +10,19 @@ import (
 	"github.com/wroge/sqlt"
 )
 
-type (
-	PostBooksInputBody struct {
-		Title         string    `json:"title" required:"true"`
-		NumberOfPages int64     `json:"number_of_pages" required:"true"`
-		Authors       []string  `json:"authors" required:"true"`
-		PublishedAt   time.Time `json:"published_at" required:"true"`
-	}
-
-	PostBooksOutputBody struct {
-		ID uuid.UUID `json:"id" required:"true"`
-	}
-)
-
 func (a *App) PostBooks(api huma.API) {
 	type (
+		PostBooksInputBody struct {
+			Title         string    `json:"title" required:"true"`
+			NumberOfPages int64     `json:"number_of_pages" required:"false"`
+			Authors       []string  `json:"authors" required:"true"`
+			PublishedAt   time.Time `json:"published_at" required:"true"`
+		}
+
+		PostBooksOutputBody struct {
+			ID uuid.UUID `json:"id" required:"true"`
+		}
+
 		Input struct {
 			Body PostBooksInputBody
 		}
@@ -50,8 +48,8 @@ func (a *App) PostBooks(api huma.API) {
 	`))
 
 	insertBook := sqlt.Dest[uuid.UUID](a.Template.New("insert_book").MustParse(`
-		INSERT INTO books (id, title, number_of_pages, published_at) VALUES
-			({{ uuidv4 }},{{ .Title }},{{ .NumberOfPages }},{{ .PublishedAt }})
+		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
+			({{ uuidv4 }},{{ .Title }},{{ .PublishedAt }}, {{ .NumberOfPages }})
 		RETURNING id;
 	`))
 
@@ -64,13 +62,13 @@ func (a *App) PostBooks(api huma.API) {
 
 	op := huma.Operation{
 		Method:          http.MethodPost,
-		Path:            "/books",
+		Path:            "/sqlt/books",
 		DefaultStatus:   http.StatusCreated,
 		MaxBodyBytes:    1 << 20, // 1MB
 		BodyReadTimeout: time.Second / 2,
 		Errors:          []int{http.StatusBadRequest, http.StatusInternalServerError},
-		Summary:         "Insert Book",
-		Description:     "Insert Book",
+		Summary:         "Insert Book Sqlt",
+		Description:     "Insert Book Sqlt",
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {
@@ -88,7 +86,7 @@ func (a *App) PostBooks(api huma.API) {
 		)
 
 		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			id, err = insertBook.QueryFirst(ctx, db, map[string]any{
+			id, err = insertBook.FetchFirst(ctx, db, map[string]any{
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
 				"PublishedAt":   input.Body.PublishedAt,
@@ -102,7 +100,7 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			authorIDs, err := queryAuthors.QueryAll(ctx, db, input.Body.Authors)
+			authorIDs, err := queryAuthors.FetchAll(ctx, db, input.Body.Authors)
 			if err != nil {
 				return err
 			}
