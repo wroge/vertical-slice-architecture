@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"os"
 	"testing"
@@ -16,24 +15,52 @@ import (
 	"github.com/wroge/vertical-slice-architecture/app"
 )
 
-var (
-	a   *app.App
-	api humatest.TestAPI
-)
+type noLogTB struct{}
+
+func (noLogTB) Helper()                         {}
+func (noLogTB) Log(args ...any)                 {}
+func (noLogTB) Logf(format string, args ...any) {}
 
 func BenchGetBooks(b *testing.B, url string) {
-	if api == nil {
-		_, api = humatest.New(b)
+	db, err := sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
+	if err != nil {
+		log.Panicf("Failed to open database: %v", err)
+	}
 
-		a.Init(api, &app.Options{})
-		if err := a.FillFakeData(); err != nil {
-			b.Fatal(err)
+	defer db.Close()
+
+	a := &app.App{
+		Dialect: "sqlite",
+		Template: sqlt.New("db").HandleErr(func(err sqlt.Error) error {
+			if errors.Is(err.Err, sql.ErrNoRows) {
+				return nil
+			}
+
+			return err.Err
+		}),
+		DB:     db,
+		Logger: log.New(os.Stdout, "Benchmark Book API - ", log.Ldate|log.Ltime|log.Lshortfile),
+	}
+
+	_, api := humatest.New(noLogTB{})
+
+	a.Init(api, &app.Options{})
+	if err := a.FillFakeData(); err != nil {
+		b.Fatal(err)
+	}
+
+	// warming up
+	for range 100 {
+		resp := api.Get(url)
+		if resp.Code != 200 {
+			b.Fatalf("Unexpected status code: %d", resp.Code)
 		}
 	}
 
 	b.ResetTimer()
+
 	// Benchmark loop
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		resp := api.Get(url)
 		if resp.Code != 200 {
 			b.Fatalf("Unexpected status code: %d", resp.Code)
@@ -50,36 +77,10 @@ func BenchGetBooks(b *testing.B, url string) {
 	}
 }
 
-func BenchmarkGetBooksStandard(b *testing.B) {
-	BenchGetBooks(b, "http://localhost:8080/standard/books?limit=100")
+func BenchmarkGetBooksSquirrel(b *testing.B) {
+	BenchGetBooks(b, "http://localhost:8080/squirrel/books?limit=100")
 }
 
 func BenchmarkGetBooksSqlt(b *testing.B) {
 	BenchGetBooks(b, "http://localhost:8080/sqlt/books?limit=100")
-}
-
-func TestMain(m *testing.M) {
-	db, err := sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
-	if err != nil {
-		log.Panicf("Failed to open database: %v", err)
-	}
-
-	defer db.Close()
-
-	log.SetOutput(io.Discard)
-
-	a = &app.App{
-		Dialect: "sqlite",
-		Template: sqlt.New("db").HandleErr(func(err sqlt.Error) error {
-			if errors.Is(err.Err, sql.ErrNoRows) {
-				return nil
-			}
-
-			return err.Err
-		}),
-		DB:     db,
-		Logger: log.New(os.Stdout, "Benchmark Book API - ", log.Ldate|log.Ltime|log.Lshortfile),
-	}
-
-	os.Exit(m.Run())
 }

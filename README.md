@@ -27,7 +27,7 @@ docker stop postgres && docker rm postgres
 ## The Slices
 
 - Query Books with sqlt: [app/get_books_sqlt.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_sqlt.go)
-- Query Books with squirrel: [app/get_books_standard.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_standard.go)
+- Query Books with squirrel: [app/get_books_squirrel.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_squirrel.go)
 - Insert Book with sqlt: [app/post_books_sqlt.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/post_books_sqlt.go)
 
 ## Highlights
@@ -38,17 +38,19 @@ docker stop postgres && docker rm postgres
 
 ## Benchmarks
 
-Of course, the standard way is a little faster than sqlt. Look at both slices and decide if it’s worth using sqlt.
+Of course, the standard/squirrel way is a little faster than sqlt. Look at both slices and decide if it’s worth using sqlt.
 
 ```
-go test -bench . -benchmem ./app
+go test -bench . -benchmem ./app -benchtime=10s -count=2
 goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
-BenchmarkGetBooksStandard-12                 448           2670635 ns/op         1222063 B/op       4533 allocs/op
-BenchmarkGetBooksSqlt-12                     447           2685391 ns/op          922190 B/op       4767 allocs/op
+BenchmarkGetBooksStandard-12                4780           2529895 ns/op          620122 B/op       4509 allocs/op
+BenchmarkGetBooksStandard-12                4696           2608533 ns/op          675072 B/op       4506 allocs/op
+BenchmarkGetBooksSqlt-12                    4560           2675467 ns/op          748185 B/op       4784 allocs/op
+BenchmarkGetBooksSqlt-12                    4483           2702024 ns/op          748305 B/op       4782 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        3.259s
+ok      github.com/wroge/vertical-slice-architecture/app        53.849s
 ```
 
 ## Feedback

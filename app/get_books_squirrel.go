@@ -45,7 +45,7 @@ type (
 	}
 )
 
-func (a *App) GetBooksStandard(api huma.API) {
+func (a *App) GetBooksSquirrel(api huma.API) {
 	filter := func(search string) squirrel.Sqlizer {
 		if a.Dialect == "postgres" {
 			return squirrel.Or{
@@ -187,7 +187,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 
 	op := huma.Operation{
 		Method:          http.MethodGet,
-		Path:            "/standard/books",
+		Path:            "/squirrel/books",
 		DefaultStatus:   http.StatusOK,
 		MaxBodyBytes:    1 << 20, // 1MB
 		BodyReadTimeout: time.Second / 2,

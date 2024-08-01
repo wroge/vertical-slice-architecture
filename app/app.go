@@ -59,10 +59,11 @@ func (a *App) Init(api huma.API, options *Options) {
 	// add handlers here
 	a.PostBooks(api)
 	a.GetBooksSqlt(api)
-	a.GetBooksStandard(api)
+	a.GetBooksSquirrel(api)
 }
 
 func (a *App) FillFakeData() error {
+	rand.Seed(0)
 	// Seed the random number generator
 	gofakeit.Seed(0)
 	var (
@@ -72,7 +73,7 @@ func (a *App) FillFakeData() error {
 	)
 
 	// Generate 1000 books
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		books[i] = uuid.New()
 		title := gofakeit.Sentence(3)         // Generates a fake book title
 		numberOfPages := rand.Intn(900) + 100 // Random number between 100 and 999
@@ -83,7 +84,7 @@ func (a *App) FillFakeData() error {
 	}
 
 	// Generate 100 authors
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		authors[i] = uuid.New()
 		name := gofakeit.Name() // Generates a fake author name
 
@@ -91,7 +92,7 @@ func (a *App) FillFakeData() error {
 	}
 
 	// Generate book_authors relationships
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		index := rand.Intn(100)
 		author := authors[index]
 		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], author))
