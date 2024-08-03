@@ -43,13 +43,13 @@ func main() {
 						}
 
 						// apply error logging here
-						fmt.Println(err, name, strings.Join(strings.Fields(r.SQL.String()), " "))
+						fmt.Println(err, name, strings.Join(strings.Fields(r.SQL.String()), " "), r.Args)
 
 						return err
 					}
 
 					// apply normal logging here
-					fmt.Println(name, strings.Join(strings.Fields(r.SQL.String()), " "))
+					fmt.Println(name, strings.Join(strings.Fields(r.SQL.String()), " "), r.Args)
 
 					return err
 				}),
@@ -60,9 +60,6 @@ func main() {
 		router := http.NewServeMux()
 
 		a.Init(humago.New(router, huma.DefaultConfig("Book API", "1.0.0")), options)
-		if err = a.FillFakeData(); err != nil {
-			logger.Panic(err)
-		}
 
 		server := &http.Server{
 			Addr:         fmt.Sprintf(":%d", options.Port),

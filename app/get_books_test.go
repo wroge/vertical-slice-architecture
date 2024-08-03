@@ -76,11 +76,9 @@ func TestMain(m *testing.M) {
 
 	_, api = humatest.New(noLogTB{})
 
-	a.Init(api, &app.Options{})
-
-	if err := a.FillFakeData(); err != nil {
-		log.Fatal(err)
-	}
+	a.Init(api, &app.Options{
+		Fill: true,
+	})
 
 	m.Run()
 }

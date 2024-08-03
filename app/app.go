@@ -18,7 +18,8 @@ import (
 )
 
 type Options struct {
-	Port int `help:"Port to listen on" short:"p" default:"8080"`
+	Port int  `help:"Port to listen on" short:"p" default:"8080"`
+	Fill bool `help:"Fill with fake data" short:"f" default:"false"`
 }
 
 type App struct {
@@ -62,6 +63,12 @@ func (a *App) Init(api huma.API, options *Options) {
 	a.GetBooksSqltAlternative(api)
 	a.GetBooksStandard(api)
 	a.GetBooksStandardAlternative(api)
+
+	if options.Fill {
+		if err = a.FillFakeData(); err != nil {
+			a.Logger.Panic(err)
+		}
+	}
 }
 
 func (a *App) FillFakeData() error {

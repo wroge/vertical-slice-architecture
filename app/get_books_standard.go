@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 )
@@ -49,12 +50,12 @@ func (a *App) GetBooksStandard(api huma.API) {
 	filter := func(search string) (string, []any) {
 		if a.Dialect == "postgres" {
 			return `(
-					POSITION($1 IN books.title) > 0 OR
+					POSITION(? IN books.title) > 0 OR
 					books.id IN (
 						SELECT book_authors.book_id
 						FROM book_authors
 						JOIN authors ON authors.id = book_authors.author_id
-						WHERE POSITION($2 IN authors.name) > 0
+						WHERE POSITION(? IN authors.name) > 0
 					)
 				)`, []any{search, search}
 		} else {
@@ -77,9 +78,11 @@ func (a *App) GetBooksStandard(api huma.API) {
 			total int64
 		)
 
-		sb.WriteString("SELECT COUNT(DISTINCT books.id) FROM books ")
-		sb.WriteString("LEFT JOIN book_authors ON book_authors.book_id = books.id ")
-		sb.WriteString("LEFT JOIN authors ON authors.id = book_authors.author_id ")
+		sb.WriteString(`
+			SELECT COUNT(DISTINCT books.id) FROM books
+			LEFT JOIN book_authors ON book_authors.book_id = books.id
+			LEFT JOIN authors ON authors.id = book_authors.author_id
+		`)
 
 		if input.Search != "" {
 			query, fArgs := filter(input.Search)
@@ -87,9 +90,19 @@ func (a *App) GetBooksStandard(api huma.API) {
 			args = append(args, fArgs...)
 		}
 
-		query := sb.String()
+		var (
+			query = sb.String()
+			err   error
+		)
 
-		err := a.DB.QueryRowContext(ctx, query, args...).Scan(&total)
+		if a.Dialect == "postgres" {
+			query, err = squirrel.Dollar.ReplacePlaceholders(query)
+			if err != nil {
+				return 0, err
+			}
+		}
+
+		err = a.DB.QueryRowContext(ctx, query, args...).Scan(&total)
 		if err != nil {
 			return 0, err
 		}
@@ -154,7 +167,17 @@ func (a *App) GetBooksStandard(api huma.API) {
 			args = append(args, input.Offset)
 		}
 
-		query := sb.String()
+		var (
+			query = sb.String()
+			err   error
+		)
+
+		if a.Dialect == "postgres" {
+			query, err = squirrel.Dollar.ReplacePlaceholders(query)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		rows, err := a.DB.QueryContext(ctx, query, args...)
 		if err != nil {

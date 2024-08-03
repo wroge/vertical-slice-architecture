@@ -3,14 +3,14 @@
 This repository showcases how to build a Vertical Slice API that supports multiple SQL dialects using [huma](https://github.com/danielgtaylor/huma) and [sqlt](https://github.com/wroge/sqlt).
 
 ```go
-// Run as local In-memory sqlite app
-go run ./cmd/sqlite/main.go
+// Run as local In-memory sqlite app and fill with fake data
+go run ./cmd/sqlite/main.go --fill=true
 // open: http://localhost:8080/docs
 
 
 // Or run as postgres app with docker
 docker run --name postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=db -p 5432:5432 -d postgres:16
-go run ./cmd/postgres/main.go
+go run ./cmd/postgres/main.go --fill=true
 // open: http://localhost:8080/docs
 
 // stop and remove container:
@@ -47,12 +47,12 @@ go test -bench . -benchmem ./app -benchtime=10s
 goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
-BenchmarkGetBooksStandard-12                2840           4203349 ns/op          605729 B/op       4568 allocs/op
-BenchmarkGetBooksAlternative-12             3634           3282745 ns/op          508550 B/op       1341 allocs/op
-BenchmarkGetBooksSqlt-12                    2718           4393281 ns/op          668224 B/op       4706 allocs/op
-BenchmarkGetBooksSqltAlternative-12         3559           3357569 ns/op          568446 B/op       1509 allocs/op
+BenchmarkGetBooksStandard-12                2827           4274116 ns/op          605015 B/op       4566 allocs/op
+BenchmarkGetBooksAlternative-12             3562           3356727 ns/op          508776 B/op       1341 allocs/op
+BenchmarkGetBooksSqlt-12                    2738           4360480 ns/op          669191 B/op       4707 allocs/op
+BenchmarkGetBooksSqltAlternative-12         3177           3454552 ns/op          566766 B/op       1509 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        49.636s
+ok      github.com/wroge/vertical-slice-architecture/app        48.914s
 ```
 
 ## Feedback
