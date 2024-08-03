@@ -3,7 +3,6 @@ package app_test
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"log"
 	"os"
 	"testing"
@@ -30,16 +29,10 @@ func BenchGetBooks(b *testing.B, url string) {
 	defer db.Close()
 
 	a := &app.App{
-		Dialect: "sqlite",
-		Template: sqlt.New("db").HandleErr(func(err sqlt.Error) error {
-			if errors.Is(err.Err, sql.ErrNoRows) {
-				return nil
-			}
-
-			return err.Err
-		}),
-		DB:     db,
-		Logger: log.New(os.Stdout, "Benchmark Book API - ", log.Ldate|log.Ltime|log.Lshortfile),
+		Dialect:  "sqlite",
+		Template: sqlt.New("db"),
+		DB:       db,
+		Logger:   log.New(os.Stdout, "Benchmark Book API - ", log.Ldate|log.Ltime|log.Lshortfile),
 	}
 
 	_, api := humatest.New(noLogTB{})

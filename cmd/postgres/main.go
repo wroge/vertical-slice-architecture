@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -33,15 +34,25 @@ func main() {
 
 		a := app.App{
 			Dialect: "postgres",
-			Template: sqlt.New("db").HandleErr(func(err sqlt.Error) error {
-				if errors.Is(err.Err, sql.ErrNoRows) {
-					return nil
-				}
+			Template: sqlt.New("db").
+				AfterRun(func(err error, name string, r *sqlt.Runner) error {
+					if err != nil {
+						// ignore sql.ErrNoRows
+						if errors.Is(err, sql.ErrNoRows) {
+							return nil
+						}
 
-				logger.Println(err.Err, err.SQL, err.Args)
+						// apply error logging here
+						fmt.Println(err, name, strings.Join(strings.Fields(r.SQL.String()), " "))
 
-				return err.Err
-			}),
+						return err
+					}
+
+					// apply normal logging here
+					fmt.Println(name, strings.Join(strings.Fields(r.SQL.String()), " "))
+
+					return err
+				}),
 			DB:     db,
 			Logger: logger,
 		}

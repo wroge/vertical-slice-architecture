@@ -22,7 +22,7 @@ type Options struct {
 }
 
 type App struct {
-	Template *sqlt.Template[any]
+	Template *sqlt.Template
 	DB       *sql.DB
 	Dialect  string
 	Logger   *log.Logger
@@ -37,13 +37,13 @@ func (a *App) Init(api huma.API, options *Options) {
 
 	_, err := a.Template.New("create").MustParse(`
 		CREATE TABLE IF NOT EXISTS books (
-			id TEXT PRIMARY KEY, -- uuid
+			id TEXT PRIMARY KEY,
 			title TEXT NOT NULL, 
 			number_of_pages INTEGER NOT NULL,
 			published_at DATE NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS authors (
-			id TEXT PRIMARY KEY, -- uuid
+			id TEXT PRIMARY KEY,
 			name TEXT UNIQUE NOT NULL
 		);
 		CREATE TABLE IF NOT EXISTS book_authors (
@@ -93,18 +93,11 @@ func (a *App) FillFakeData() error {
 
 	// Generate book_authors relationships
 	for i := range 1000 {
-		index := rand.Intn(100)
-		author := authors[index]
-		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], author))
+		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], authors[rand.Intn(100)]))
 
-		next := rand.Intn(100)
-		nextAuthor := authors[next]
-
-		if index == next {
-			continue
+		for rand.Intn(10) > 5 {
+			buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s') ON CONFLICT (book_id, author_id) DO NOTHING;\n", books[i], authors[rand.Intn(100)]))
 		}
-
-		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], nextAuthor))
 	}
 
 	_, err := a.DB.Exec(buffer.String())
