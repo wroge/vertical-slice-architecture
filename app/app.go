@@ -59,7 +59,9 @@ func (a *App) Init(api huma.API, options *Options) {
 	// add handlers here
 	a.PostBooks(api)
 	a.GetBooksSqlt(api)
-	a.GetBooksSquirrel(api)
+	a.GetBooksSqltAlternative(api)
+	a.GetBooksStandard(api)
+	a.GetBooksStandardAlternative(api)
 }
 
 func (a *App) FillFakeData() error {

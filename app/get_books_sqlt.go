@@ -35,28 +35,22 @@ func (a *App) GetBooksSqlt(api huma.API) {
 	})
 
 	a.Template.New("search_filter").MustParse(` 
-		{{ if eq Dialect "postgres" }}
-			POSITION({{ . }} IN books.title) > 0
-		{{ else }}
-			INSTR(books.title, {{ . }}) > 0
+		{{ if eq Dialect "postgres" }}POSITION({{ . }} IN books.title) > 0
+		{{ else }}INSTR(books.title, {{ . }}) > 0
 		{{ end }}
-		OR
-		books.id IN (
+		OR books.id IN (
 			SELECT book_authors.book_id
 			FROM book_authors
 			JOIN authors ON authors.id = book_authors.author_id
 			WHERE 
-			{{ if eq Dialect "postgres" }}
-				POSITION({{ . }} IN authors.name) > 0
-			{{ else }}
-				INSTR(authors.name, {{ . }}) > 0
+			{{ if eq Dialect "postgres" }}POSITION({{ . }} IN authors.name) > 0
+			{{ else }}INSTR(authors.name, {{ . }}) > 0
 			{{ end }}
 		)
 	`)
 
 	queryTotal := a.Template.New("query_total").MustParse(`
-		SELECT COUNT(DISTINCT books.id)
-		FROM books
+		SELECT COUNT(DISTINCT books.id) FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
 		{{ if .Search }}
@@ -84,27 +78,18 @@ func (a *App) GetBooksSqlt(api huma.API) {
 		GROUP BY books.id, books.title, books.number_of_pages, books.published_at
 		{{ if .Sort }}
 			ORDER BY
-			{{ if eq .Sort "id" }}
-				books.id
-				{{ else if eq .Sort "title" }}
-				books.title
-				{{ else if eq .Sort "number_of_pages" }}
-				books.number_of_pages
-				{{ else if eq .Sort "published_at" }}
-				books.published_at
+			{{ if eq .Sort "id" }}books.id
+			{{ else if eq .Sort "title" }}books.title
+			{{ else if eq .Sort "number_of_pages" }}books.number_of_pages
+			{{ else if eq .Sort "published_at" }}books.published_at
+			{{ else }} {{ fail "invalid sort column" }}
 			{{ end }}
-			{{ if eq .Direction "desc" }}
-				DESC NULLS LAST
-				{{ else }}
-				ASC NULLS LAST
+			{{ if eq .Direction "desc" }}DESC NULLS LAST
+			{{ else }}ASC NULLS LAST
 			{{ end }}
 		{{ end }}
-		{{ if .Limit }}
-			LIMIT {{ .Limit }}
-		{{ end }}
-		{{ if .Offset }}
-			OFFSET {{ .Offset }}
-		{{ end }};
+		{{ if .Limit }}LIMIT {{ .Limit }}{{ end }}
+		{{ if .Offset }}OFFSET {{ .Offset }}{{ end }};
 	`)
 
 	op := huma.Operation{

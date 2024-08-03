@@ -26,8 +26,12 @@ docker stop postgres && docker rm postgres
 
 ## The Slices
 
-- Query Books with sqlt: [app/get_books_sqlt.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_sqlt.go)
-- Query Books with squirrel: [app/get_books_squirrel.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_squirrel.go)
+In the alternative slice, the list of books is directly converted into a JSON array in the database. In the regular version, two queries are executed to obtain the total number of books available before pagination.
+
+- Query Books Standard: [app/get_books_standard.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_standard.go)
+- Query Books Standard Alternative: [app/get_books_standard_alternative.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_standard_alternative.go)
+- Query Books sqlt: [app/get_books_sqlt.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_sqlt.go)
+- Query Books sqlt Alternative: [app/get_books_sqlt_alternative.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/get_books_sqlt_alternative.go)
 - Insert Book with sqlt: [app/post_books_sqlt.go](https://github.com/wroge/vertical-slice-architecture/blob/main/app/post_books_sqlt.go)
 
 ## Highlights
@@ -38,19 +42,17 @@ docker stop postgres && docker rm postgres
 
 ## Benchmarks
 
-Of course, the standard/squirrel way is a little faster than sqlt. Look at both slices and decide if it’s worth using sqlt.
-
 ```
-go test -bench . -benchmem ./app -benchtime=10s -count=2
+go test -bench . -benchmem ./app -benchtime=10s
 goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
-BenchmarkGetBooksSquirrel-12                5048           2374140 ns/op          592942 B/op       4361 allocs/op
-BenchmarkGetBooksSquirrel-12                4812           2357486 ns/op          589853 B/op       4329 allocs/op
-BenchmarkGetBooksSqlt-12                    4976           2447785 ns/op          658196 B/op       4575 allocs/op
-BenchmarkGetBooksSqlt-12                    4936           2480386 ns/op          667358 B/op       4632 allocs/op
+BenchmarkGetBooksStandard-12                2840           4203349 ns/op          605729 B/op       4568 allocs/op
+BenchmarkGetBooksAlternative-12             3634           3282745 ns/op          508550 B/op       1341 allocs/op
+BenchmarkGetBooksSqlt-12                    2718           4393281 ns/op          668224 B/op       4706 allocs/op
+BenchmarkGetBooksSqltAlternative-12         3559           3357569 ns/op          568446 B/op       1509 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        52.586s
+ok      github.com/wroge/vertical-slice-architecture/app        49.636s
 ```
 
 ## Feedback

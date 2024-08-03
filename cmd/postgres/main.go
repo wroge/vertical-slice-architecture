@@ -34,7 +34,7 @@ func main() {
 
 		a := app.App{
 			Dialect: "postgres",
-			Template: sqlt.New("db").
+			Template: sqlt.New("db").Dollar().
 				AfterRun(func(err error, name string, r *sqlt.Runner) error {
 					if err != nil {
 						// ignore sql.ErrNoRows
