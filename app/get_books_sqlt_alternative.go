@@ -109,8 +109,6 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
 		body, err := sqlt.FetchOne[GetBooksOutputBody](ctx, query, a.DB, input)
 		if err != nil {
-			a.Logger.Error(err.Error())
-
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 

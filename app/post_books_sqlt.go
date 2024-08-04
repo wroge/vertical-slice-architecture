@@ -116,8 +116,6 @@ func (a *App) PostBooks(api huma.API) {
 			return nil
 		})
 		if err != nil {
-			a.Logger.Error(err.Error())
-
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
