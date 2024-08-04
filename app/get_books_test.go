@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -71,7 +72,9 @@ func TestMain(m *testing.M) {
 		Dialect:  "sqlite",
 		Template: sqlt.New("db"),
 		DB:       db,
-		Logger:   log.New(os.Stdout, "Benchmark Book API - ", log.Ldate|log.Ltime|log.Lshortfile),
+		Logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level: slog.LevelError,
+		})),
 	}
 
 	_, api = humatest.New(noLogTB{})

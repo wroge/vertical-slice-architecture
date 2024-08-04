@@ -24,7 +24,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 		WITH filtered_books AS (
 			SELECT books.id, books.title, books.number_of_pages,`)
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			sb.WriteString(`
 				to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at,
 				json_agg(json_build_object('id', authors.id, 'name', authors.name)) AS authors`)
@@ -42,7 +42,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 		if input.Search != "" {
 			sb.WriteString(`
 				WHERE (`)
-			if a.Dialect == "postgres" {
+			if a.Dialect == Postgres {
 				sb.WriteString(` POSITION(? IN books.title) > 0`)
 			} else {
 				sb.WriteString(` INSTR(books.title, ?) > 0`)
@@ -55,7 +55,8 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 						FROM book_authors
 						JOIN authors ON authors.id = book_authors.author_id
 						WHERE`)
-			if a.Dialect == "postgres" {
+
+			if a.Dialect == Postgres {
 				sb.WriteString(` POSITION(? IN authors.name) > 0`)
 			} else {
 				sb.WriteString(` INSTR(authors.name, ?) > 0`)
@@ -105,7 +106,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 		SELECT
 			(SELECT COUNT(*) FROM filtered_books),`)
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			sb.WriteString(`
 				json_agg(json_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))`)
 		} else {
@@ -124,7 +125,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 			query = sb.String()
 		)
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			query, err = squirrel.Dollar.ReplacePlaceholders(query)
 			if err != nil {
 				return body, err
@@ -160,7 +161,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
 		body, err := query(ctx, input)
 		if err != nil {
-			a.Logger.Print(err)
+			a.Logger.Error(err.Error())
 
 			return nil, huma.Error500InternalServerError("internal error")
 		}

@@ -47,12 +47,12 @@ go test -bench . -benchmem ./app -benchtime=10s
 goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
-BenchmarkGetBooksStandard-12                2827           4274116 ns/op          605015 B/op       4566 allocs/op
-BenchmarkGetBooksAlternative-12             3562           3356727 ns/op          508776 B/op       1341 allocs/op
-BenchmarkGetBooksSqlt-12                    2738           4360480 ns/op          669191 B/op       4707 allocs/op
-BenchmarkGetBooksSqltAlternative-12         3177           3454552 ns/op          566766 B/op       1509 allocs/op
+BenchmarkGetBooksStandard-12                2781           4221771 ns/op          605500 B/op       4566 allocs/op
+BenchmarkGetBooksAlternative-12             3696           3239728 ns/op          508972 B/op       1341 allocs/op
+BenchmarkGetBooksSqlt-12                    2661           4349771 ns/op          674194 B/op       4725 allocs/op
+BenchmarkGetBooksSqltAlternative-12         3608           3366753 ns/op          572580 B/op       1518 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        48.914s
+ok      github.com/wroge/vertical-slice-architecture/app        49.316s
 ```
 
 ## Feedback

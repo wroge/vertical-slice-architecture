@@ -2,12 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -20,41 +18,26 @@ import (
 
 func main() {
 	cli := humacli.New(func(hooks humacli.Hooks, options *app.Options) {
-		logger := log.New(os.Stdout, "Postgres Book API - ", log.Ldate|log.Ltime|log.Lshortfile)
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		}))
 
 		db, err := sql.Open("pgx", "host=localhost port=5432 user=user password=password dbname=db sslmode=disable")
 		if err != nil {
-			logger.Fatal(err)
+			logger.Error(err.Error())
 		}
 
 		err = db.Ping()
 		if err != nil {
-			logger.Fatal("Cannot connect to database", err)
+			logger.Error(err.Error())
 		}
 
 		a := app.App{
-			Dialect: "postgres",
-			Template: sqlt.New("db").Dollar().
-				AfterRun(func(err error, name string, r *sqlt.Runner) error {
-					if err != nil {
-						// ignore sql.ErrNoRows
-						if errors.Is(err, sql.ErrNoRows) {
-							return nil
-						}
-
-						// apply error logging here
-						fmt.Println(err, name, strings.Join(strings.Fields(r.SQL.String()), " "), r.Args)
-
-						return err
-					}
-
-					// apply normal logging here
-					fmt.Println(name, strings.Join(strings.Fields(r.SQL.String()), " "), r.Args)
-
-					return err
-				}),
-			DB:     db,
-			Logger: logger,
+			Dialect:  app.Postgres,
+			Template: sqlt.New("db").Dollar(),
+			DB:       db,
+			Logger:   logger,
 		}
 
 		router := http.NewServeMux()
@@ -66,13 +49,12 @@ func main() {
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  30 * time.Second,
-			ErrorLog:     a.Logger,
 			Handler:      router,
 		}
 
 		// Tell the CLI how to start your router.
 		hooks.OnStart(func() {
-			logger.Print("API started...")
+			logger.Info("API started...")
 
 			server.ListenAndServe()
 		})

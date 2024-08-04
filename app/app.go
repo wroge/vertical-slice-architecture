@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
+	"strings"
 	"text/template"
 	"time"
 
@@ -17,6 +19,13 @@ import (
 	"golang.org/x/exp/rand"
 )
 
+type startKey struct{}
+
+const (
+	Postgres = "postgres"
+	Sqlite   = "sqlite"
+)
+
 type Options struct {
 	Port int  `help:"Port to listen on" short:"p" default:"8080"`
 	Fill bool `help:"Fill with fake data" short:"f" default:"false"`
@@ -26,15 +35,41 @@ type App struct {
 	Template *sqlt.Template
 	DB       *sql.DB
 	Dialect  string
-	Logger   *log.Logger
+	Logger   *slog.Logger
 }
 
 func (a *App) Init(api huma.API, options *Options) {
-	a.Template.Funcs(sprig.TxtFuncMap()).Funcs(template.FuncMap{
-		"Dialect": func() string {
-			return a.Dialect
-		},
-	})
+	a.Template.
+		Funcs(sprig.TxtFuncMap()).
+		Funcs(template.FuncMap{
+			"Dialect": func() string {
+				return a.Dialect
+			},
+		}).
+		BeforeRun(func(name string, r *sqlt.Runner) {
+			r.Context = context.WithValue(r.Context, startKey{}, time.Now())
+		}).
+		AfterRun(func(err error, name string, r *sqlt.Runner) error {
+			dur := time.Since(r.Context.Value(startKey{}).(time.Time))
+			query := strings.Join(strings.Fields(r.SQL.String()), " ")
+
+			if err != nil {
+				// ignore sql.ErrNoRows
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil
+				}
+
+				// apply error logging here
+				a.Logger.Info(err.Error(), "template", name, "duration", dur, "sql", query, "args", r.Args)
+
+				return err
+			}
+
+			// apply normal logging here
+			a.Logger.Info("query executed", "template", name, "duration", dur, "sql", query, "args", r.Args)
+
+			return nil
+		})
 
 	_, err := a.Template.New("create").MustParse(`
 		CREATE TABLE IF NOT EXISTS books (
@@ -54,7 +89,7 @@ func (a *App) Init(api huma.API, options *Options) {
 		);
 	`).Exec(context.Background(), a.DB, nil)
 	if err != nil {
-		a.Logger.Panic(err)
+		a.Logger.Error(err.Error())
 	}
 
 	// add handlers here
@@ -66,7 +101,7 @@ func (a *App) Init(api huma.API, options *Options) {
 
 	if options.Fill {
 		if err = a.FillFakeData(); err != nil {
-			a.Logger.Panic(err)
+			a.Logger.Error(err.Error())
 		}
 	}
 }

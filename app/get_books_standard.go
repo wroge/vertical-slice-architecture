@@ -48,7 +48,7 @@ type (
 
 func (a *App) GetBooksStandard(api huma.API) {
 	filter := func(search string) (string, []any) {
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			return `(
 					POSITION(? IN books.title) > 0 OR
 					books.id IN (
@@ -95,7 +95,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 			err   error
 		)
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			query, err = squirrel.Dollar.ReplacePlaceholders(query)
 			if err != nil {
 				return 0, err
@@ -119,7 +119,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 
 		sb.WriteString("SELECT books.id, books.title, books.number_of_pages, books.published_at, ")
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			sb.WriteString("json_agg(json_build_object('id', authors.id, 'name', authors.name)) ")
 		} else {
 			sb.WriteString("json_group_array(json_object('id', authors.id, 'name', authors.name)) ")
@@ -172,7 +172,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 			err   error
 		)
 
-		if a.Dialect == "postgres" {
+		if a.Dialect == Postgres {
 			query, err = squirrel.Dollar.ReplacePlaceholders(query)
 			if err != nil {
 				return nil, err
@@ -224,13 +224,15 @@ func (a *App) GetBooksStandard(api huma.API) {
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
 		total, err := queryTotal(ctx, input)
 		if err != nil {
-			a.Logger.Print(err)
+			a.Logger.Error(err.Error())
+
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
 		books, err := query(ctx, input)
 		if err != nil {
-			a.Logger.Print(err)
+			a.Logger.Error(err.Error())
+			
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
