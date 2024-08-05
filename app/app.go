@@ -76,10 +76,10 @@ func (a *App) Init(api huma.API, options *Options) {
 
 	_, err := a.Template.New("create").MustParse(`
 		CREATE TABLE IF NOT EXISTS books (
-			id TEXT PRIMARY KEY,
+			id TEXT PRIMARY KEY, 
 			title TEXT NOT NULL, 
-			number_of_pages INTEGER NOT NULL,
-			published_at DATE NOT NULL
+			number_of_pages INTEGER NOT NULL, 
+			published_at DATE NOT NULL 
 		);
 		CREATE TABLE IF NOT EXISTS authors (
 			id TEXT PRIMARY KEY,
