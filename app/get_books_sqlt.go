@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"text/template"
 	"time"
@@ -13,25 +12,7 @@ import (
 
 func (a *App) GetBooksSqlt(api huma.API) {
 	a.Template.Funcs(template.FuncMap{
-		"ScanAuthors": func(dest *[]Author, str string) sqlt.Scanner {
-			var data []byte
-
-			return sqlt.Scanner{
-				SQL:  str,
-				Dest: &data,
-				Map: func() error {
-					var authors []Author
-
-					if err := json.Unmarshal(data, &authors); err != nil {
-						return err
-					}
-
-					*dest = authors
-
-					return nil
-				},
-			}
-		},
+		"ScanAuthors": sqlt.ScanJSON[[]Author],
 	})
 
 	a.Template.New("search_filter").MustParse(` 

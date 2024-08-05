@@ -19,8 +19,7 @@ import (
 func main() {
 	cli := humacli.New(func(hooks humacli.Hooks, options *app.Options) {
 		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: true,
-			Level:     slog.LevelDebug,
+			Level: slog.LevelDebug,
 		}))
 
 		db, err := sql.Open("pgx", "host=localhost port=5432 user=user password=password dbname=db sslmode=disable")

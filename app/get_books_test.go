@@ -28,9 +28,9 @@ var (
 	api humatest.TestAPI
 )
 
-func BenchGetBooks(b *testing.B, alt string) {
+func BenchGetBooks(b *testing.B, alt string, limit uint64) {
 	for range b.N {
-		resp := api.Get(fmt.Sprintf("http://localhost:8080/%s/books?limit=100&search=e&offet=10&sort=number_of_pages&direction=desc", alt))
+		resp := api.Get(fmt.Sprintf("http://localhost:8080/%s/books?limit=%d&search=e&offet=10&sort=number_of_pages&direction=desc", alt, limit))
 		if resp.Code != 200 {
 			b.Fatalf("Unexpected status code: %d", resp.Code)
 		}
@@ -42,20 +42,36 @@ func BenchGetBooks(b *testing.B, alt string) {
 	}
 }
 
-func BenchmarkGetBooksStandard(b *testing.B) {
-	BenchGetBooks(b, "standard")
+func BenchmarkGetBooksStandard100(b *testing.B) {
+	BenchGetBooks(b, "standard", 100)
 }
 
-func BenchmarkGetBooksAlternative(b *testing.B) {
-	BenchGetBooks(b, "standard_alternative")
+func BenchmarkGetBooksStandardAlternative100(b *testing.B) {
+	BenchGetBooks(b, "standard_alternative", 100)
 }
 
-func BenchmarkGetBooksSqlt(b *testing.B) {
-	BenchGetBooks(b, "sqlt")
+func BenchmarkGetBooksSqlt100(b *testing.B) {
+	BenchGetBooks(b, "sqlt", 100)
 }
 
-func BenchmarkGetBooksSqltAlternative(b *testing.B) {
-	BenchGetBooks(b, "sqlt_alternative")
+func BenchmarkGetBooksSqltAlternative100(b *testing.B) {
+	BenchGetBooks(b, "sqlt_alternative", 100)
+}
+
+func BenchmarkGetBooksStandard10(b *testing.B) {
+	BenchGetBooks(b, "standard", 10)
+}
+
+func BenchmarkGetBooksStandardAlternative10(b *testing.B) {
+	BenchGetBooks(b, "standard_alternative", 10)
+}
+
+func BenchmarkGetBooksSqlt10(b *testing.B) {
+	BenchGetBooks(b, "sqlt", 10)
+}
+
+func BenchmarkGetBooksSqltAlternative10(b *testing.B) {
+	BenchGetBooks(b, "sqlt_alternative", 10)
 }
 
 func TestMain(m *testing.M) {

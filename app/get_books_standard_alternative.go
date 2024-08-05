@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -14,125 +14,96 @@ import (
 )
 
 func (a *App) GetBooksStandardAlternative(api huma.API) {
-	query := func(ctx context.Context, input *GetBooksInput) (GetBooksOutputBody, error) {
-		var (
-			sb   strings.Builder
-			args []any
-		)
-
-		sb.WriteString(`
-		WITH filtered_books AS (
-			SELECT books.id, books.title, books.number_of_pages,`)
-
+	filter := func(search string) (string, []any) {
 		if a.Dialect == Postgres {
-			sb.WriteString(`
-				to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at,
-				json_agg(json_build_object('id', authors.id, 'name', authors.name)) AS authors`)
-		} else {
-			sb.WriteString(`
-				strftime('%Y-%m-%dT%H:%M:%SZ', published_at) AS published_at,
-				json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors`)
-		}
-
-		sb.WriteString(`
-			FROM books
-			LEFT JOIN book_authors ON book_authors.book_id = books.id
-			LEFT JOIN authors ON authors.id = book_authors.author_id`)
-
-		if input.Search != "" {
-			sb.WriteString(`
-				WHERE (`)
-			if a.Dialect == Postgres {
-				sb.WriteString(` POSITION(? IN books.title) > 0`)
-			} else {
-				sb.WriteString(` INSTR(books.title, ?) > 0`)
-			}
-
-			args = append(args, input.Search)
-			sb.WriteString(`
-					OR books.id IN (
+			return `(
+					POSITION(? IN books.title) > 0 OR
+					books.id IN (
 						SELECT book_authors.book_id
 						FROM book_authors
 						JOIN authors ON authors.id = book_authors.author_id
-						WHERE`)
+						WHERE POSITION(? IN authors.name) > 0
+					)
+				)`, []any{search, search}
+		} else {
+			return `(
+					INSTR(books.title, ?) > 0 OR
+					books.id IN (
+						SELECT book_authors.book_id
+						FROM book_authors
+						JOIN authors ON authors.id = book_authors.author_id
+						WHERE INSTR(authors.name, ?) > 0
+					)
+				)`, []any{search, search}
+		}
+	}
 
-			if a.Dialect == Postgres {
-				sb.WriteString(` POSITION(? IN authors.name) > 0`)
-			} else {
-				sb.WriteString(` INSTR(authors.name, ?) > 0`)
-			}
+	query := func(ctx context.Context, input *GetBooksInput) (GetBooksOutputBody, error) {
+		filtered_books := squirrel.Select(
+			"books.id",
+			"books.title",
+			"books.number_of_pages",
+		).From("books").
+			LeftJoin("book_authors ON book_authors.book_id = books.id").
+			LeftJoin("authors ON authors.id = book_authors.author_id").
+			GroupBy(
+				"books.id",
+				"books.title",
+				"books.number_of_pages",
+				"books.published_at",
+			)
 
-			args = append(args, input.Search)
-			sb.WriteString("))")
+		if a.Dialect == Postgres {
+			filtered_books = filtered_books.Columns(
+				`to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at`,
+				"json_agg(json_build_object('id', authors.id, 'name', authors.name)) AS authors",
+			)
+		} else {
+			filtered_books = filtered_books.Columns(
+				`strftime('%Y-%m-%dT%H:%M:%SZ', published_at) AS published_at`,
+				"json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors",
+			)
+		}
+		if input.Search != "" {
+			searchQuery, fArgs := filter(input.Search)
+			filtered_books = filtered_books.Where(searchQuery, fArgs...)
 		}
 
-		sb.WriteString(`
-			GROUP BY books.id, books.title, books.number_of_pages, books.published_at
-		),
-		paginated_books AS (
-			SELECT id, title, number_of_pages, published_at, authors
-			FROM filtered_books`)
+		paginated_books := squirrel.Select("id", "title", "number_of_pages", "published_at", "authors").From("filtered_books")
 
 		if input.Sort != "" {
-			sb.WriteString(`
-				ORDER BY`)
-			switch input.Sort {
-			case "id":
-				sb.WriteString(` id`)
-			case "title":
-				sb.WriteString(` title`)
-			case "number_of_pages":
-				sb.WriteString(` number_of_pages`)
-			case "published_at":
-				sb.WriteString(` published_at`)
-			}
-			if input.Direction == "desc" {
-				sb.WriteString(` DESC NULLS LAST`)
-			} else {
-				sb.WriteString(` ASC NULLS LAST`)
-			}
+			paginated_books = paginated_books.OrderBy(fmt.Sprintf("%s %s NULLS LAST", input.Sort, input.Direction))
 		}
 
 		if input.Limit > 0 {
-			sb.WriteString(` LIMIT ?`)
-			args = append(args, input.Limit)
-		}
-		if input.Offset > 0 {
-			sb.WriteString(` OFFSET ?`)
-			args = append(args, input.Offset)
+			paginated_books = paginated_books.Limit(input.Limit)
 		}
 
-		sb.WriteString(`)
-		SELECT
-			(SELECT COUNT(*) FROM filtered_books),`)
+		if input.Offset > 0 {
+			paginated_books = paginated_books.Offset(input.Offset)
+		}
+
+		queryBuilder := squirrel.Select("(SELECT COUNT(*) FROM filtered_books)").
+			From("paginated_books").
+			Prefix("WITH filtered_books AS (?), paginated_books AS (?)", filtered_books, paginated_books)
 
 		if a.Dialect == Postgres {
-			sb.WriteString(`
-				json_agg(json_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))`)
+			queryBuilder = queryBuilder.Column("json_agg(json_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))")
 		} else {
-			sb.WriteString(`
-				json_group_array(json_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', json(authors)))`)
+			queryBuilder = queryBuilder.Column("json_group_array(json_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', json(authors)))")
 		}
-
-		sb.WriteString(`
-			AS books
-		FROM paginated_books;`)
 
 		var (
 			err   error
 			body  GetBooksOutputBody
 			books []byte
-			query = sb.String()
 		)
 
 		if a.Dialect == Postgres {
-			query, err = squirrel.Dollar.ReplacePlaceholders(query)
-			if err != nil {
-				return body, err
-			}
+			queryBuilder = queryBuilder.PlaceholderFormat(squirrel.Dollar)
 		}
 
-		if err = a.DB.QueryRowContext(ctx, query, args...).Scan(&body.Total, &books); err != nil {
+		if err = queryBuilder.RunWith(a.DB).ScanContext(ctx, &body.Total, &books); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return body, nil
 			}

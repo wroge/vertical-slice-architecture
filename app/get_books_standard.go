@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -16,29 +16,29 @@ import (
 
 type (
 	Book struct {
-		ID            uuid.UUID `json:"id"`
-		Title         string    `json:"title" doc:"Title" example:"Titel"`
-		NumberOfPages int64     `json:"number_of_pages"`
-		Authors       []Author  `json:"authors,omitempty"`
 		PublishedAt   time.Time `json:"published_at"`
+		Title         string    `json:"title" doc:"Title"`
+		Authors       []Author  `json:"authors,omitempty"`
+		NumberOfPages int64     `json:"number_of_pages"`
+		ID            uuid.UUID `json:"id"`
 	}
 
 	Author struct {
-		ID   uuid.UUID `json:"id"`
 		Name string    `json:"name"`
+		ID   uuid.UUID `json:"id"`
 	}
 
 	GetBooksOutputBody struct {
-		Total int64  `json:"total"`
 		Books []Book `json:"books"`
+		Total int64  `json:"total"`
 	}
 
 	GetBooksInput struct {
 		Sort      string `query:"sort" doc:"Sort column" default:"id" enum:"id,title,number_of_pages,published_at"`
 		Direction string `query:"direction" doc:"direction" enum:"asc,desc"`
 		Search    string `query:"search" doc:"Search term"`
-		Limit     int    `query:"limit" doc:"Limit" required:"true" minimum:"1" maximum:"100" default:"10"`
-		Offset    int    `query:"offset" doc:"Offset" minimum:"0"`
+		Limit     uint64 `query:"limit" doc:"Limit" required:"true" minimum:"1" maximum:"100" default:"10"`
+		Offset    uint64 `query:"offset" doc:"Offset" minimum:"0"`
 	}
 
 	GetBooksOutput struct {
@@ -72,37 +72,22 @@ func (a *App) GetBooksStandard(api huma.API) {
 	}
 
 	queryTotal := func(ctx context.Context, input *GetBooksInput) (int64, error) {
-		var (
-			sb    strings.Builder
-			args  []any
-			total int64
-		)
-
-		sb.WriteString(`
-			SELECT COUNT(DISTINCT books.id) FROM books
-			LEFT JOIN book_authors ON book_authors.book_id = books.id
-			LEFT JOIN authors ON authors.id = book_authors.author_id
-		`)
+		queryBuilder := squirrel.Select("COUNT(DISTINCT books.id)").
+			From("books").
+			LeftJoin("book_authors ON book_authors.book_id = books.id").
+			LeftJoin("authors ON authors.id = book_authors.author_id")
 
 		if input.Search != "" {
-			query, fArgs := filter(input.Search)
-			sb.WriteString("WHERE " + query)
-			args = append(args, fArgs...)
+			searchQuery, fArgs := filter(input.Search)
+			queryBuilder = queryBuilder.Where(searchQuery, fArgs...)
 		}
-
-		var (
-			query = sb.String()
-			err   error
-		)
 
 		if a.Dialect == Postgres {
-			query, err = squirrel.Dollar.ReplacePlaceholders(query)
-			if err != nil {
-				return 0, err
-			}
+			queryBuilder = queryBuilder.PlaceholderFormat(squirrel.Dollar)
 		}
 
-		err = a.DB.QueryRowContext(ctx, query, args...).Scan(&total)
+		var total int64
+		err := queryBuilder.RunWith(a.DB).ScanContext(ctx, &total)
 		if err != nil {
 			return 0, err
 		}
@@ -111,75 +96,42 @@ func (a *App) GetBooksStandard(api huma.API) {
 	}
 
 	query := func(ctx context.Context, input *GetBooksInput) ([]Book, error) {
-		var (
-			sb    strings.Builder
-			args  []any
-			books []Book
-		)
-
-		sb.WriteString("SELECT books.id, books.title, books.number_of_pages, books.published_at, ")
+		queryBuilder := squirrel.Select("books.id", "books.title", "books.number_of_pages", "books.published_at")
 
 		if a.Dialect == Postgres {
-			sb.WriteString("json_agg(json_build_object('id', authors.id, 'name', authors.name)) ")
+			queryBuilder = queryBuilder.Column("json_agg(json_build_object('id', authors.id, 'name', authors.name))")
 		} else {
-			sb.WriteString("json_group_array(json_object('id', authors.id, 'name', authors.name)) ")
+			queryBuilder = queryBuilder.Column("json_group_array(json_object('id', authors.id, 'name', authors.name))")
 		}
-		sb.WriteString(`FROM books
-			LEFT JOIN book_authors ON book_authors.book_id = books.id
-			LEFT JOIN authors ON authors.id = book_authors.author_id
-		`)
+
+		queryBuilder = queryBuilder.From("books").
+			LeftJoin("book_authors ON book_authors.book_id = books.id").
+			LeftJoin("authors ON authors.id = book_authors.author_id")
 
 		if input.Search != "" {
-			query, fArgs := filter(input.Search)
-			sb.WriteString("WHERE " + query)
-			args = append(args, fArgs...)
+			searchQuery, fArgs := filter(input.Search)
+			queryBuilder = queryBuilder.Where(searchQuery, fArgs...)
 		}
 
-		sb.WriteString("GROUP BY books.id, books.title, books.number_of_pages, books.published_at ")
+		queryBuilder = queryBuilder.GroupBy("books.id", "books.title", "books.number_of_pages", "books.published_at")
 
 		if input.Sort != "" {
-			var direction string
-			if input.Direction == "desc" {
-				direction = "DESC NULLS LAST"
-			} else {
-				direction = "ASC NULLS LAST"
-			}
-
-			switch input.Sort {
-			case "id":
-				sb.WriteString("ORDER BY books.id " + direction + " ")
-			case "title":
-				sb.WriteString("ORDER BY books.title " + direction + " ")
-			case "number_of_pages":
-				sb.WriteString("ORDER BY books.number_of_pages " + direction + " ")
-			case "published_at":
-				sb.WriteString("ORDER BY books.published_at " + direction + " ")
-			}
+			queryBuilder = queryBuilder.OrderBy(fmt.Sprintf("books.%s %s NULLS LAST", input.Sort, input.Direction))
 		}
 
 		if input.Limit > 0 {
-			sb.WriteString("LIMIT ? ")
-			args = append(args, input.Limit)
+			queryBuilder = queryBuilder.Limit(input.Limit)
 		}
 
 		if input.Offset > 0 {
-			sb.WriteString("OFFSET ? ")
-			args = append(args, input.Offset)
+			queryBuilder = queryBuilder.Offset(input.Offset)
 		}
-
-		var (
-			query = sb.String()
-			err   error
-		)
 
 		if a.Dialect == Postgres {
-			query, err = squirrel.Dollar.ReplacePlaceholders(query)
-			if err != nil {
-				return nil, err
-			}
+			queryBuilder = queryBuilder.PlaceholderFormat(squirrel.Dollar)
 		}
 
-		rows, err := a.DB.QueryContext(ctx, query, args...)
+		rows, err := queryBuilder.RunWith(a.DB).QueryContext(ctx)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return nil, nil
@@ -190,19 +142,24 @@ func (a *App) GetBooksStandard(api huma.API) {
 
 		defer rows.Close()
 
+		var (
+			authorsData []byte
+			book        Book
+			books       []Book
+		)
+
 		for rows.Next() {
-			var (
-				authors []byte
-				book    Book
-			)
-
-			if err := rows.Scan(&book.ID, &book.Title, &book.NumberOfPages, &book.PublishedAt, &authors); err != nil {
+			if err := rows.Scan(&book.ID, &book.Title, &book.NumberOfPages, &book.PublishedAt, &authorsData); err != nil {
 				return nil, err
 			}
 
-			if err := json.Unmarshal(authors, &book.Authors); err != nil {
+			var authors []Author
+
+			if err := json.Unmarshal(authorsData, &authors); err != nil {
 				return nil, err
 			}
+
+			book.Authors = authors
 
 			books = append(books, book)
 		}
@@ -232,7 +189,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 		books, err := query(ctx, input)
 		if err != nil {
 			a.Logger.Error(err.Error())
-			
+
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 

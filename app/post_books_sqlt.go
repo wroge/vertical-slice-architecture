@@ -13,10 +13,10 @@ import (
 func (a *App) PostBooks(api huma.API) {
 	type (
 		PostBooksInputBody struct {
-			Title         string    `json:"title" required:"true"`
-			NumberOfPages int64     `json:"number_of_pages" required:"false"`
-			Authors       []string  `json:"authors" required:"true"`
 			PublishedAt   time.Time `json:"published_at" required:"true"`
+			Title         string    `json:"title" required:"true"`
+			Authors       []string  `json:"authors" required:"true"`
+			NumberOfPages int64     `json:"number_of_pages" required:"false"`
 		}
 
 		PostBooksOutputBody struct {
@@ -72,14 +72,6 @@ func (a *App) PostBooks(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {
-		if input.Body.Title == "" {
-			return nil, huma.Error400BadRequest("please provide a title")
-		}
-
-		if len(input.Body.Authors) == 0 {
-			return nil, huma.Error400BadRequest("please provide an author")
-		}
-
 		var (
 			id  uuid.UUID
 			err error

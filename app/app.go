@@ -34,8 +34,8 @@ type Options struct {
 type App struct {
 	Template *sqlt.Template
 	DB       *sql.DB
-	Dialect  string
 	Logger   *slog.Logger
+	Dialect  string
 }
 
 func (a *App) Init(api huma.API, options *Options) {
@@ -60,7 +60,7 @@ func (a *App) Init(api huma.API, options *Options) {
 				}
 
 				// apply error logging here
-				a.Logger.Info(err.Error(), "template", name, "duration", dur, "sql", query, "args", r.Args)
+				a.Logger.Info(fmt.Sprintf("%+v", err), "template", name, "duration", dur, "sql", query, "args", r.Args)
 
 				return err
 			}
