@@ -11,7 +11,6 @@ require (
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/wroge/sqlt v0.0.38
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 )
 
 require (

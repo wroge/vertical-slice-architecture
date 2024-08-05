@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"strings"
 	"text/template"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/wroge/sqlt"
-	"golang.org/x/exp/rand"
 )
 
 type startKey struct{}
@@ -107,7 +107,6 @@ func (a *App) Init(api huma.API, options *Options) {
 }
 
 func (a *App) FillFakeData() error {
-	rand.Seed(0)
 	// Seed the random number generator
 	gofakeit.Seed(0)
 	var (
