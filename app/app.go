@@ -22,8 +22,8 @@ import (
 type startKey struct{}
 
 const (
-	Postgres = "postgres"
-	Sqlite   = "sqlite"
+	Postgres = "Postgres"
+	Sqlite   = "Sqlite"
 )
 
 type Options struct {
@@ -42,8 +42,11 @@ func (a *App) Init(api huma.API, options *Options) {
 	a.Template.
 		Funcs(sprig.TxtFuncMap()).
 		Funcs(template.FuncMap{
-			"Dialect": func() string {
-				return a.Dialect
+			Postgres: func() bool {
+				return a.Dialect == Postgres
+			},
+			Sqlite: func() bool {
+				return a.Dialect == Sqlite
 			},
 		}).
 		BeforeRun(func(name string, r *sqlt.Runner) {
@@ -87,6 +90,9 @@ func (a *App) Init(api huma.API, options *Options) {
 			author_id TEXT NOT NULL,
 			PRIMARY KEY (book_id, author_id)
 		);
+		CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
+		CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(name);
+		CREATE INDEX IF NOT EXISTS idx_book_authors_book_id_author_id ON book_authors(book_id, author_id);
 	`).Exec(context.Background(), a.DB, nil)
 	if err != nil {
 		a.Logger.Error(err.Error())

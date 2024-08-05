@@ -17,39 +17,42 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 
 	query := a.Template.New("query").MustParse(`
         WITH filtered_books AS (
-            SELECT books.id, books.title, books.number_of_pages,
-                {{ if eq Dialect "postgres" }}
-                    to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at,
+            SELECT 
+                books.id, 
+                books.title, 
+                books.number_of_pages,
+                {{ if Postgres }}
+                    to_char(books.published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at,
                     json_agg(json_build_object('id', authors.id, 'name', authors.name)) AS authors
                 {{ else }}
-                    strftime('%Y-%m-%dT%H:%M:%SZ', published_at) AS published_at,
+                    strftime('%Y-%m-%dT%H:%M:%SZ', books.published_at) AS published_at,
                     json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors
                 {{ end }}
             FROM books
             LEFT JOIN book_authors ON book_authors.book_id = books.id
             LEFT JOIN authors ON authors.id = book_authors.author_id
             {{ if .Search }}
-                WHERE (
-                    {{ if eq Dialect "postgres" }} POSITION({{ .Search }} IN books.title) > 0
-                    {{ else }} INSTR(books.title, {{ .Search }}) > 0
-                    {{ end }}
-                    OR books.id IN (
-                        SELECT book_authors.book_id
-                        FROM book_authors
-                        JOIN authors ON authors.id = book_authors.author_id
-                        WHERE
-                        {{ if eq Dialect "postgres" }}
-                            POSITION({{ .Search }} IN authors.name) > 0
-                        {{ else }}
-                            INSTR(authors.name, {{ .Search }}) > 0
-                        {{ end }}
-                    )
+                WHERE 
+                    ({{ if Postgres }} books.title ILIKE '%' || {{ .Search }} || '%'
+                    {{ else }} books.title LIKE '%' || {{ .Search }} || '%' {{ end }})
+                OR EXISTS (
+                    SELECT 1
+                    FROM book_authors
+                    JOIN authors ON authors.id = book_authors.author_id
+                    WHERE book_authors.book_id = books.id
+                    AND ({{ if Postgres }} authors.name ILIKE '%' || {{ .Search }} || '%'
+                        {{ else }} authors.name LIKE '%' || {{ .Search }} || '%' {{ end }})
                 )
             {{ end }}
             GROUP BY books.id, books.title, books.number_of_pages, books.published_at
         ),
         paginated_books AS (
-            SELECT id, title, number_of_pages, published_at, authors
+            SELECT 
+                id, 
+                title, 
+                number_of_pages, 
+                published_at, 
+                authors
             FROM filtered_books
             {{ if .Sort }}
                 ORDER BY
@@ -62,15 +65,15 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
                 {{ else }} ASC NULLS LAST
                 {{ end }}
             {{ end }}
-            {{ if .Limit }}LIMIT {{ .Limit }}{{ end }}
-            {{ if .Offset }}OFFSET {{ .Offset }}{{ end }}
+            {{ if .Limit }} LIMIT {{ .Limit }} {{ end }}
+            {{ if .Offset }} OFFSET {{ .Offset }} {{ end }}
         )
         SELECT
             {{ ScanInt64 Dest.Total "(SELECT COUNT(*) FROM filtered_books)" }},
-            {{ if eq Dialect "postgres" }}
-                json_agg(json_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))
+            {{ if Postgres }}
+                json_agg(json_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))
             {{ else }}
-                json_group_array(json_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', json(authors)))
+                json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))
             {{ end }}
             {{ ScanBooks Dest.Books "AS books" }}
         FROM paginated_books;

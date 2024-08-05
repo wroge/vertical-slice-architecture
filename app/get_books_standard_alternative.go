@@ -16,25 +16,23 @@ import (
 func (a *App) GetBooksStandardAlternative(api huma.API) {
 	filter := func(search string) (string, []any) {
 		if a.Dialect == Postgres {
-			return `(
-					POSITION(? IN books.title) > 0 OR
-					books.id IN (
-						SELECT book_authors.book_id
-						FROM book_authors
-						JOIN authors ON authors.id = book_authors.author_id
-						WHERE POSITION(? IN authors.name) > 0
-					)
-				)`, []any{search, search}
+			return `books.title ILIKE '%' || ? || '%' OR
+			EXISTS (
+				SELECT 1
+				FROM book_authors
+				JOIN authors ON authors.id = book_authors.author_id
+				WHERE book_authors.book_id = books.id
+				AND authors.name ILIKE '%' || ? || '%'
+			)`, []any{search, search}
 		} else {
-			return `(
-					INSTR(books.title, ?) > 0 OR
-					books.id IN (
-						SELECT book_authors.book_id
-						FROM book_authors
-						JOIN authors ON authors.id = book_authors.author_id
-						WHERE INSTR(authors.name, ?) > 0
-					)
-				)`, []any{search, search}
+			return `books.title LIKE '%' || ? || '%' OR
+			EXISTS (
+				SELECT 1
+				FROM book_authors
+				JOIN authors ON authors.id = book_authors.author_id
+				WHERE book_authors.book_id = books.id
+				AND authors.name LIKE '%' || ? || '%'
+			)`, []any{search, search}
 		}
 	}
 
