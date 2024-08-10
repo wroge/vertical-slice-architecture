@@ -30,7 +30,7 @@ var (
 
 func BenchGetBooks(b *testing.B, alt string, limit uint64) {
 	for range b.N {
-		resp := api.Get(fmt.Sprintf("http://localhost:8080/%s/books?limit=%d&search=e&offet=10&sort=number_of_pages&direction=desc", alt, limit))
+		resp := api.Get(fmt.Sprintf("http://localhost:8080/%s/books?limit=%d&search=a&offet=10&sort=number_of_pages&direction=desc", alt, limit))
 		if resp.Code != 200 {
 			b.Fatalf("Unexpected status code: %d", resp.Code)
 		}

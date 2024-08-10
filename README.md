@@ -4,17 +4,20 @@ This repository showcases how to build a Vertical Slice API that supports multip
 
 ```go
 // Run as local In-memory sqlite app and fill with fake data
-go run ./cmd/sqlite/main.go --fill=true
+go run ./cmd/sqlite/main.go
 // open: http://localhost:8080/docs
 
 
 // Or run as postgres app with docker
 docker run --name postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=db -p 5432:5432 -d postgres:16
-go run ./cmd/postgres/main.go --fill=true
+go run ./cmd/postgres/main.go
 // open: http://localhost:8080/docs
 
 // stop and remove container:
 docker stop postgres && docker rm postgres
+
+// create new fake data
+go run ./cmd/fake-data/main.go
 ```
 
 ## What is Vertical Slice Architecture?
@@ -43,20 +46,20 @@ In the alternative slice, the list of books is directly converted into a JSON ar
 ## Benchmarks
 
 ```
-go test -bench . -benchmem ./app -benchtime=10s
+go test -bench . -benchmem ./app -benchtime=10s         
 goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
-BenchmarkGetBooksStandard100-12                     4030           2932113 ns/op          608947 B/op       4691 allocs/op
-BenchmarkGetBooksStandardAlternative100-12          4611           2579027 ns/op          528377 B/op       1595 allocs/op
-BenchmarkGetBooksSqlt100-12                         3969           3069970 ns/op          668091 B/op       4663 allocs/op
-BenchmarkGetBooksSqltAlternative100-12              4484           2647152 ns/op          572257 B/op       1472 allocs/op
-BenchmarkGetBooksStandard10-12                      5152           2377542 ns/op           76283 B/op        778 allocs/op
-BenchmarkGetBooksStandardAlternative10-12           5941           2012358 ns/op           74698 B/op        471 allocs/op
-BenchmarkGetBooksSqlt10-12                          5013           2381804 ns/op           83069 B/op        717 allocs/op
-BenchmarkGetBooksSqltAlternative10-12               5916           2035125 ns/op           67016 B/op        318 allocs/op
+BenchmarkGetBooksStandard100-12                     3992           3006379 ns/op          617744 B/op       4746 allocs/op
+BenchmarkGetBooksStandardAlternative100-12          4498           2659571 ns/op          535497 B/op       1649 allocs/op
+BenchmarkGetBooksSqlt100-12                         3826           3168712 ns/op          680449 B/op       4716 allocs/op
+BenchmarkGetBooksSqltAlternative100-12              4323           2802906 ns/op          579289 B/op       1526 allocs/op
+BenchmarkGetBooksStandard10-12                      4888           2428489 ns/op           81878 B/op        807 allocs/op
+BenchmarkGetBooksStandardAlternative10-12           5832           2057900 ns/op           80319 B/op        501 allocs/op
+BenchmarkGetBooksSqlt10-12                          4868           2460466 ns/op           85782 B/op        738 allocs/op
+BenchmarkGetBooksSqltAlternative10-12               5760           2097406 ns/op           69789 B/op        344 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        98.291s
+ok      github.com/wroge/vertical-slice-architecture/app        98.544s
 ```
 
 ## Feedback
