@@ -1,6 +1,6 @@
 module github.com/wroge/vertical-slice-architecture
 
-go 1.22.4
+go 1.22.6
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/wroge/sqlt v0.0.40
+	github.com/wroge/sqlt v0.0.41
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 )
 

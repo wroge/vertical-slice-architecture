@@ -47,27 +47,27 @@ func (a *App) Init(api huma.API, options *Options) {
 				return a.Dialect == Sqlite
 			},
 		}).
-		BeforeRun(func(name string, r *sqlt.Runner) {
+		BeforeRun(func(op sqlt.Operation, r *sqlt.Runner) {
 			r.Context = context.WithValue(r.Context, startKey{}, time.Now())
 		}).
-		AfterRun(func(err error, name string, r *sqlt.Runner) error {
+		AfterRun(func(err error, op sqlt.Operation, r *sqlt.Runner) error {
 			dur := time.Since(r.Context.Value(startKey{}).(time.Time))
 
 			if err != nil {
 				// ignore sql.ErrNoRows
-				if errors.Is(err, sql.ErrNoRows) {
+				if op == sqlt.FetchAllOperation && errors.Is(err, sql.ErrNoRows) {
 					return nil
 				}
 
 				// apply error logging here
-				a.Logger.Error(err.Error(), "template", name, "duration", dur, "sql", r.SQL, "args", r.Args)
+				a.Logger.Error(err.Error(), "template", r.Text.Name(), "duration", dur, "sql", r.SQL, "args", r.Args)
 
 				return err
 			}
 
-			if name != "data" {
+			if r.Text.Name() != "data" {
 				// apply normal logging here
-				a.Logger.Info("query executed", "template", name, "duration", dur, "sql", r.SQL, "args", r.Args)
+				a.Logger.Info("query executed", "template", r.Text.Name(), "duration", dur, "sql", r.SQL, "args", r.Args)
 			}
 
 			return nil
