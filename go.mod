@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/wroge/sqlt v0.0.42
+	github.com/wroge/sqlt v0.0.43
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 )
 

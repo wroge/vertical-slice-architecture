@@ -45,12 +45,12 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
             {{ if .Offset }} OFFSET {{ .Offset }} {{ end }}
         )
         SELECT
-            (SELECT COUNT(*) FROM filtered_books), {{ ScanInt64 Dest.Total }}
+            {{ ScanInt64 Dest.Total "(SELECT COUNT(*) FROM filtered_books)" }}
             {{ if Postgres }}
-                json_agg(json_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))
+                {{ ScanBooks Dest.Books ", json_agg(json_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))" }} 
             {{ else }}
-                json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))
-            {{ end }} {{ ScanBooks Dest.Books }} 
+                {{ ScanBooks Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
+            {{ end }}
         FROM paginated_books;
     `)
 

@@ -40,15 +40,15 @@ func (a *App) GetBooksSqlt(api huma.API) {
 
 	query := a.Template.New("query").MustParse(`
 		SELECT
-			books.id, {{ Scan Dest.ID }}
-			books.title, {{ ScanString Dest.Title }}
-			books.number_of_pages, {{ ScanInt64 Dest.NumberOfPages }}
-			books.published_at, {{ ScanTime Dest.PublishedAt }}
+			{{ Scan Dest.ID "books.id" }}
+			{{ ScanString Dest.Title ", books.title" }}
+			{{ ScanInt64 Dest.NumberOfPages ", books.number_of_pages" }}
+			{{ ScanTime Dest.PublishedAt ", books.published_at" }}
 			{{ if Postgres }}
-				json_agg(json_build_object('id', authors.id, 'name', authors.name))
+				{{ ScanAuthors Dest.Authors ", json_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
 			{{ else }}
-				json_group_array(json_object('id', authors.id, 'name', authors.name))
-			{{ end }} {{ ScanAuthors Dest.Authors }}
+				{{ ScanAuthors Dest.Authors ", json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
+			{{ end }}
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
