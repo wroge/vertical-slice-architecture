@@ -98,7 +98,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 		queryBuilder := squirrel.Select("books.id", "books.title", "books.number_of_pages", "books.published_at")
 
 		if a.Dialect == Postgres {
-			queryBuilder = queryBuilder.Column("json_agg(json_build_object('id', authors.id, 'name', authors.name))")
+			queryBuilder = queryBuilder.Column("jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name))")
 		} else {
 			queryBuilder = queryBuilder.Column("json_group_array(json_object('id', authors.id, 'name', authors.name))")
 		}

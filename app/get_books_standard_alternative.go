@@ -52,7 +52,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 		if a.Dialect == Postgres {
 			filtered_books = filtered_books.Columns(
 				`to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at`,
-				"json_agg(json_build_object('id', authors.id, 'name', authors.name)) AS authors",
+				"jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) AS authors",
 			)
 		} else {
 			filtered_books = filtered_books.Columns(
@@ -84,7 +84,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 			Prefix("WITH filtered_books AS (?), paginated_books AS (?)", filtered_books, paginated_books)
 
 		if a.Dialect == Postgres {
-			queryBuilder = queryBuilder.Column("json_agg(json_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))")
+			queryBuilder = queryBuilder.Column("jsonb_agg(jsonb_build_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', authors))")
 		} else {
 			queryBuilder = queryBuilder.Column("json_group_array(json_object('id', id, 'title', title, 'number_of_pages', number_of_pages, 'published_at', published_at, 'authors', json(authors)))")
 		}
