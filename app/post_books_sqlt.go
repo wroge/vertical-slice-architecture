@@ -66,7 +66,7 @@ func (a *App) PostBooks(api huma.API) {
 		DefaultStatus:   http.StatusCreated,
 		MaxBodyBytes:    1 << 20, // 1MB
 		BodyReadTimeout: time.Second / 2,
-		Errors:          []int{http.StatusBadRequest, http.StatusInternalServerError},
+		Errors:          []int{http.StatusInternalServerError},
 		Summary:         "Insert Book Sqlt",
 		Description:     "Insert Book Sqlt",
 	}
@@ -78,7 +78,7 @@ func (a *App) PostBooks(api huma.API) {
 		)
 
 		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			id, err = sqlt.FetchFirst[uuid.UUID](ctx, insertBook, db, map[string]any{
+			id, err = sqlt.FetchOne[uuid.UUID](ctx, insertBook, db, map[string]any{
 				"Title":         input.Body.Title,
 				"NumberOfPages": input.Body.NumberOfPages,
 				"PublishedAt":   input.Body.PublishedAt,

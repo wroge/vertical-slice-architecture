@@ -71,7 +71,7 @@ func (a *App) GetBooksSqlt(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		total, err := sqlt.FetchFirst[int64](ctx, queryTotal, a.DB, input)
+		total, err := sqlt.FetchOne[int64](ctx, queryTotal, a.DB, input)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}

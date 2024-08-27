@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"errors"
 	"log/slog"
 	"text/template"
 	"time"
@@ -47,18 +46,13 @@ func (a *App) Init(api huma.API, options *Options) {
 				return a.Dialect == Sqlite
 			},
 		}).
-		BeforeRun(func(op sqlt.Operation, r *sqlt.Runner) {
+		BeforeRun(func(r *sqlt.Runner) {
 			r.Context = context.WithValue(r.Context, startKey{}, time.Now())
 		}).
-		AfterRun(func(err error, op sqlt.Operation, r *sqlt.Runner) error {
+		AfterRun(func(err error, r *sqlt.Runner) error {
 			dur := time.Since(r.Context.Value(startKey{}).(time.Time))
 
 			if err != nil {
-				// ignore sql.ErrNoRows
-				if op == sqlt.FetchAllOperation && errors.Is(err, sql.ErrNoRows) {
-					return nil
-				}
-
 				// apply error logging here
 				a.Logger.Error(err.Error(), "template", r.Text.Name(), "duration", dur, "sql", r.SQL, "args", r.Args)
 
