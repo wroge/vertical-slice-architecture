@@ -40,7 +40,7 @@ func (a *App) GetBooksSqlt(api huma.API) {
 			{{ ScanInt64 Dest.NumberOfPages ", books.number_of_pages" }}
 			{{ ScanTime Dest.PublishedAt ", books.published_at" }}
 			{{ if Postgres }}
-				{{ ScanJSON Dest.Authors ", json_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
+				{{ ScanJSON Dest.Authors ", jsonb_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
 			{{ else }}
 				{{ ScanJSON Dest.Authors ", json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
 			{{ end }}
