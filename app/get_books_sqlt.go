@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -11,10 +10,6 @@ import (
 )
 
 func (a *App) GetBooksSqlt(api huma.API) {
-	a.Template.Funcs(template.FuncMap{
-		"ScanAuthors": sqlt.ScanJSON[[]Author],
-	})
-
 	a.Template.New("search_filter").MustParse(` 
 		{{ if Postgres }}books.title ILIKE '%' || {{ .Search }} || '%' OR
 			EXISTS (
@@ -45,9 +40,9 @@ func (a *App) GetBooksSqlt(api huma.API) {
 			{{ ScanInt64 Dest.NumberOfPages ", books.number_of_pages" }}
 			{{ ScanTime Dest.PublishedAt ", books.published_at" }}
 			{{ if Postgres }}
-				{{ ScanAuthors Dest.Authors ", json_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
+				{{ ScanJSON Dest.Authors ", json_agg(json_build_object('id', authors.id, 'name', authors.name))" }}
 			{{ else }}
-				{{ ScanAuthors Dest.Authors ", json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
+				{{ ScanJSON Dest.Authors ", json_group_array(json_object('id', authors.id, 'name', authors.name))" }}
 			{{ end }}
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id

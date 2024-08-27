@@ -12,15 +12,16 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/wroge/sqlt"
 )
 
 type (
 	Book struct {
-		PublishedAt   time.Time `json:"published_at"`
-		Title         string    `json:"title" doc:"Title"`
-		Authors       []Author  `json:"authors,omitempty"`
-		NumberOfPages int64     `json:"number_of_pages"`
-		ID            uuid.UUID `json:"id"`
+		PublishedAt   time.Time          `json:"published_at"`
+		Title         string             `json:"title" doc:"Title"`
+		Authors       sqlt.Slice[Author] `json:"authors,omitempty"`
+		NumberOfPages int64              `json:"number_of_pages"`
+		ID            uuid.UUID          `json:"id"`
 	}
 
 	Author struct {
@@ -29,8 +30,8 @@ type (
 	}
 
 	GetBooksOutputBody struct {
-		Books []Book `json:"books"`
-		Total int64  `json:"total"`
+		Books sqlt.Slice[Book] `json:"books"`
+		Total int64            `json:"total"`
 	}
 
 	GetBooksInput struct {

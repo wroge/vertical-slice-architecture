@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -11,10 +10,6 @@ import (
 )
 
 func (a *App) GetBooksSqltAlternative(api huma.API) {
-	a.Template.Funcs(template.FuncMap{
-		"ScanBooks": sqlt.ScanJSON[[]Book],
-	})
-
 	query := a.Template.New("query").MustParse(`
         WITH filtered_books AS (
             SELECT books.id, books.title, books.number_of_pages
@@ -47,9 +42,9 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
         SELECT
             {{ ScanInt64 Dest.Total "(SELECT COUNT(*) FROM filtered_books)" }}
             {{ if Postgres }}
-                {{ ScanBooks Dest.Books ", json_agg(json_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))" }} 
+                {{ ScanJSON Dest.Books ", json_agg(json_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))" }} 
             {{ else }}
-                {{ ScanBooks Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
+                {{ ScanJSON Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
             {{ end }}
         FROM paginated_books;
     `)
