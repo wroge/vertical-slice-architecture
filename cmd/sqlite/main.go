@@ -11,7 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"github.com/wroge/sqlt"
 	"github.com/wroge/vertical-slice-architecture/app"
 )
@@ -22,7 +22,7 @@ func main() {
 			Level: slog.LevelDebug,
 		}))
 
-		db, err := sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
+		db, err := sql.Open("sqlite", "file:test.db?cache=shared&mode=memory")
 		if err != nil {
 			logger.Error(err.Error())
 		}

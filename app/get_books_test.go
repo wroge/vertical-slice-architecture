@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/danielgtaylor/huma/v2/humatest"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"github.com/wroge/sqlt"
 	"github.com/wroge/vertical-slice-architecture/app"
@@ -22,11 +22,7 @@ func (noLogTB) Helper()                         {}
 func (noLogTB) Log(args ...any)                 {}
 func (noLogTB) Logf(format string, args ...any) {}
 
-var (
-	db  *sql.DB
-	a   *app.App
-	api humatest.TestAPI
-)
+var api humatest.TestAPI
 
 func BenchGetBooks(b *testing.B, alt string, limit uint64) {
 	for range b.N {
@@ -75,16 +71,14 @@ func BenchmarkGetBooksSqltAlternative10(b *testing.B) {
 }
 
 func TestMain(m *testing.M) {
-	var err error
-
-	db, err = sql.Open("sqlite3", "file:test.db?cache=shared&mode=memory")
+	db, err := sql.Open("sqlite", "file:test.db?cache=shared&mode=memory")
 	if err != nil {
 		log.Panicf("Failed to open database: %v", err)
 	}
 
 	defer db.Close()
 
-	a = &app.App{
+	a := &app.App{
 		Dialect:  "sqlite",
 		Template: sqlt.New("db"),
 		DB:       db,

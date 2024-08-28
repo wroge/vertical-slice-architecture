@@ -19,10 +19,12 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
                 {{ else }}
                     , strftime('%Y-%m-%dT%H:%M:%SZ', books.published_at) AS published_at
                     , json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors
-                {{ end }} FROM books
+                {{ end }} 
+            FROM books
             LEFT JOIN book_authors ON book_authors.book_id = books.id
             LEFT JOIN authors ON authors.id = book_authors.author_id
-            {{ if .Search }} WHERE 
+            {{ if .Search }} 
+            WHERE 
                     ({{ if Postgres }} books.title ILIKE '%' || {{ .Search }} || '%'
                     {{ else }} books.title LIKE '%' || {{ .Search }} || '%' {{ end }})
                 OR EXISTS (
@@ -31,7 +33,8 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
                     AND ({{ if Postgres }} authors.name ILIKE '%' || {{ .Search }} || '%'
                         {{ else }} authors.name LIKE '%' || {{ .Search }} || '%' {{ end }})
                 )
-            {{ end }} GROUP BY books.id, books.title, books.number_of_pages, books.published_at
+            {{ end }} 
+            GROUP BY books.id, books.title, books.number_of_pages, books.published_at
         ),
         paginated_books AS (
             SELECT id, title, number_of_pages, published_at, authors FROM filtered_books
