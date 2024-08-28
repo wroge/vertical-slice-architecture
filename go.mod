@@ -9,7 +9,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.18.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/wroge/sqlt v0.0.45
+	github.com/wroge/sqlt v0.0.48
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	modernc.org/sqlite v1.32.0
 )
