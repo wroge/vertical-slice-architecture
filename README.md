@@ -51,16 +51,16 @@ goos: darwin
 goarch: arm64
 pkg: github.com/wroge/vertical-slice-architecture/app
 cpu: Apple M3 Pro
-BenchmarkGetBooksStandard100-12                     2443           4923080 ns/op          780105 B/op       8846 allocs/op
-BenchmarkGetBooksStandardAlternative100-12          2536           4659737 ns/op          696839 B/op       4265 allocs/op
-BenchmarkGetBooksSqlt100-12                         2355           5126846 ns/op          853000 B/op       9124 allocs/op
-BenchmarkGetBooksSqltAlternative100-12              2539           4673319 ns/op          722965 B/op       4137 allocs/op
-BenchmarkGetBooksStandard10-12                      3026           3900260 ns/op          168748 B/op       3377 allocs/op
-BenchmarkGetBooksStandardAlternative10-12           3472           3412845 ns/op          132096 B/op       1855 allocs/op
-BenchmarkGetBooksSqlt10-12                          2967           3940957 ns/op          175386 B/op       3350 allocs/op
-BenchmarkGetBooksSqltAlternative10-12               3471           3403855 ns/op          120299 B/op       1703 allocs/op
+BenchmarkGetBooksStandard100-12                     2395           5009523 ns/op          715542 B/op       6845 allocs/op
+BenchmarkGetBooksStandardAlternative100-12          2506           4689935 ns/op          664016 B/op       3264 allocs/op
+BenchmarkGetBooksSqlt100-12                         2296           5252497 ns/op          761994 B/op       6722 allocs/op
+BenchmarkGetBooksSqltAlternative100-12              2496           4779638 ns/op          683041 B/op       2937 allocs/op
+BenchmarkGetBooksStandard10-12                      3031           3949041 ns/op          104156 B/op       1376 allocs/op
+BenchmarkGetBooksStandardAlternative10-12           3420           3485305 ns/op           99656 B/op        855 allocs/op
+BenchmarkGetBooksSqlt10-12                          2992           3986485 ns/op           90941 B/op        952 allocs/op
+BenchmarkGetBooksSqltAlternative10-12               3394           3574096 ns/op           80290 B/op        504 allocs/op
 PASS
-ok      github.com/wroge/vertical-slice-architecture/app        98.702s
+ok      github.com/wroge/vertical-slice-architecture/app        99.502s
 ```
 
 ## Feedback

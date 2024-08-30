@@ -11,26 +11,22 @@ import (
 
 func (a *App) GetBooksSqlt(api huma.API) {
 	a.Template.New("search_filter").MustParse(` 
-		{{ if Postgres }}books.title ILIKE '%' || {{ .Search }} || '%' OR
-			EXISTS (
-				SELECT 1 FROM book_authors JOIN authors ON authors.id = book_authors.author_id
-				WHERE book_authors.book_id = books.id
-				AND authors.name ILIKE '%' || {{ .Search }} || '%'
-			)
-		{{ else }}books.title LIKE '%' || {{ .Search }} || '%' OR
-			EXISTS (
-				SELECT 1 FROM book_authors JOIN authors ON authors.id = book_authors.author_id
-				WHERE book_authors.book_id = books.id
-				AND authors.name LIKE '%' || {{ .Search }} || '%'
-			)
+		{{ if Postgres }} POSITION({{ . }} IN LOWER(books.title)) > 0
+		{{ else }} INSTR(LOWER(books.title), {{ . }}) 
 		{{ end }}
+		OR EXISTS (
+			SELECT 1 FROM book_authors JOIN authors ON authors.id = book_authors.author_id
+			WHERE book_authors.book_id = books.id
+			AND ({{ if Postgres }} POSITION({{ . }} IN LOWER(authors.name)) > 0
+				{{ else }} INSTR(LOWER(authors.name), {{ . }}) {{ end }})
+		)
 	`)
 
 	queryTotal := a.Template.New("query_total").MustParse(`
 		SELECT COUNT(DISTINCT books.id) FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
-		{{ if .Search }} WHERE {{ template "search_filter" . }}{{ end }};
+		{{ with (lower .Search) }} WHERE {{ template "search_filter" . }}{{ end }};
 	`)
 
 	query := a.Template.New("query").MustParse(`
@@ -47,7 +43,7 @@ func (a *App) GetBooksSqlt(api huma.API) {
 		FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
-		{{ if .Search }} WHERE {{ template "search_filter" . }}
+		{{ with (lower .Search) }} WHERE {{ template "search_filter" . }}
 		{{ end }} GROUP BY books.id, books.title, books.number_of_pages, books.published_at
 		{{ if .Sort }} ORDER BY books.{{ Raw .Sort }} {{ Raw .Direction }} NULLS LAST {{ end }}
 		{{ if .Limit }} LIMIT {{ .Limit }}{{ end }}

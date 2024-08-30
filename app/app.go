@@ -83,9 +83,12 @@ func (a *App) Init(api huma.API, options *Options) {
 			author_id TEXT NOT NULL,
 			PRIMARY KEY (book_id, author_id)
 		);
-		CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
-		CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(name);
-		CREATE INDEX IF NOT EXISTS idx_book_authors_book_id_author_id ON book_authors(book_id, author_id);
+
+		DROP INDEX IF EXISTS idx_books_title;
+		CREATE INDEX IF NOT EXISTS idx_books_title ON books(LOWER(title));
+
+		DROP INDEX IF EXISTS idx_authors_name;
+		CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(LOWER(name));
 	`).Exec(context.Background(), a.DB, nil)
 	if err != nil {
 		a.Logger.Error(err.Error())

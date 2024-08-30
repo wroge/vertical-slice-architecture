@@ -6,9 +6,10 @@ import (
 	"os"
 	"time"
 
+	"math/rand/v2"
+
 	"github.com/brianvoe/gofakeit"
 	"github.com/google/uuid"
-	"golang.org/x/exp/rand"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	for i := range 1000 {
 		books[i] = uuid.New()
 		title := gofakeit.Sentence(3)         // Generates a fake book title
-		numberOfPages := rand.Intn(900) + 100 // Random number between 100 and 999
+		numberOfPages := rand.IntN(900) + 100 // Random number between 100 and 999
 		publishedAt := randomDate().Format("2006-01-02")
 
 		buffer.WriteString(fmt.Sprintf("INSERT INTO books (id, title, number_of_pages, published_at) VALUES ('%s', '%s', %d, '%s');\n",
@@ -41,10 +42,10 @@ func main() {
 
 	// Generate book_authors relationships
 	for i := range 1000 {
-		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], authors[rand.Intn(100)]))
+		buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s');\n", books[i], authors[rand.IntN(100)]))
 
-		for rand.Intn(10) > 5 {
-			buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s') ON CONFLICT (book_id, author_id) DO NOTHING;\n", books[i], authors[rand.Intn(100)]))
+		for rand.IntN(10) > 5 {
+			buffer.WriteString(fmt.Sprintf("INSERT INTO book_authors (book_id, author_id) VALUES ('%s', '%s') ON CONFLICT (book_id, author_id) DO NOTHING;\n", books[i], authors[rand.IntN(100)]))
 		}
 	}
 
@@ -57,6 +58,6 @@ func main() {
 func randomDate() time.Time {
 	min := time.Date(1950, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
 	max := time.Date(2022, 12, 31, 0, 0, 0, 0, time.UTC).Unix()
-	sec := rand.Int63n(max-min) + min
+	sec := rand.Int64N(max-min) + min
 	return time.Unix(sec, 0)
 }

@@ -23,15 +23,16 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
             FROM books
             LEFT JOIN book_authors ON book_authors.book_id = books.id
             LEFT JOIN authors ON authors.id = book_authors.author_id
-            {{ if .Search }} 
+            {{ with (lower .Search) }} 
             WHERE 
-                    ({{ if Postgres }} books.title ILIKE '%' || {{ .Search }} || '%'
-                    {{ else }} books.title LIKE '%' || {{ .Search }} || '%' {{ end }})
+                {{ if Postgres }} POSITION({{ . }} IN LOWER(books.title)) > 0
+                {{ else }} INSTR(LOWER(books.title), {{ . }}) 
+                {{ end }}
                 OR EXISTS (
                     SELECT 1 FROM book_authors JOIN authors ON authors.id = book_authors.author_id
                     WHERE book_authors.book_id = books.id
-                    AND ({{ if Postgres }} authors.name ILIKE '%' || {{ .Search }} || '%'
-                        {{ else }} authors.name LIKE '%' || {{ .Search }} || '%' {{ end }})
+                    AND ({{ if Postgres }} POSITION({{ . }} IN LOWER(authors.name)) > 0
+                        {{ else }} INSTR(LOWER(authors.name), {{ . }}) {{ end }})
                 )
             {{ end }} 
             GROUP BY books.id, books.title, books.number_of_pages, books.published_at

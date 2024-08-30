@@ -16,7 +16,7 @@ import (
 func (a *App) GetBooksStandardAlternative(api huma.API) {
 	filter := func(search string) (string, []any) {
 		if a.Dialect == Postgres {
-			return `books.title ILIKE '%' || ? || '%' OR
+			return `POSITION(? IN LOWER(books.title)) > 0
 			EXISTS (
 				SELECT 1 FROM book_authors
 				JOIN authors ON authors.id = book_authors.author_id
@@ -24,7 +24,7 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 				AND authors.name ILIKE '%' || ? || '%'
 			)`, []any{search, search}
 		} else {
-			return `books.title LIKE '%' || ? || '%' OR
+			return `INSTR(LOWER(books.title), ?)  OR
 			EXISTS (
 				SELECT 1 FROM book_authors
 				JOIN authors ON authors.id = book_authors.author_id
