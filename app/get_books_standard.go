@@ -142,7 +142,7 @@ func (a *App) GetBooksStandard(api huma.API) {
 		var (
 			authorsData []byte
 			book        Book
-			books       []Book
+			books       = []Book{}
 		)
 
 		for rows.Next() {

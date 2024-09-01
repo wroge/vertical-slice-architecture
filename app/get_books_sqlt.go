@@ -22,14 +22,14 @@ func (a *App) GetBooksSqlt(api huma.API) {
 		)
 	`)
 
-	queryTotal := a.Template.New("query_total").MustParse(`
+	queryTotal := sqlt.DestParam[int64, *GetBooksInput](a.Template.New("query_total").MustParse(`
 		SELECT COUNT(DISTINCT books.id) FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
 		{{ with (lower .Search) }} WHERE {{ template "search_filter" . }}{{ end }};
-	`)
+	`))
 
-	query := a.Template.New("query").MustParse(`
+	query := sqlt.DestParam[Book, *GetBooksInput](a.Template.New("query").MustParse(`
 		SELECT
 			{{ Scan Dest.ID "books.id" }}
 			{{ ScanString Dest.Title ", books.title" }}
@@ -48,7 +48,7 @@ func (a *App) GetBooksSqlt(api huma.API) {
 		{{ if .Sort }} ORDER BY books.{{ Raw .Sort }} {{ Raw .Direction }} NULLS LAST {{ end }}
 		{{ if .Limit }} LIMIT {{ .Limit }}{{ end }}
 		{{ if .Offset }} OFFSET {{ .Offset }}{{ end }};
-	`)
+	`))
 
 	op := huma.Operation{
 		Method:          http.MethodGet,
@@ -62,12 +62,12 @@ func (a *App) GetBooksSqlt(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		total, err := sqlt.FetchOne[int64](ctx, queryTotal, a.DB, input)
+		total, err := queryTotal.One(ctx, a.DB, input)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
-		books, err := sqlt.FetchAll[Book](ctx, query, a.DB, input)
+		books, err := query.All(ctx, a.DB, input)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}

@@ -10,7 +10,7 @@ import (
 )
 
 func (a *App) GetBooksSqltAlternative(api huma.API) {
-	query := a.Template.New("query").MustParse(`
+	query := sqlt.DestParam[GetBooksOutputBody, *GetBooksInput](a.Template.New("query").MustParse(`
         WITH filtered_books AS (
             SELECT books.id, books.title, books.number_of_pages
                 {{ if Postgres }}
@@ -51,7 +51,7 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
                 {{ ScanJSON Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
             {{ end }}
         FROM paginated_books;
-    `)
+    `))
 
 	op := huma.Operation{
 		Method:          http.MethodGet,
@@ -65,7 +65,7 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		body, err := sqlt.FetchOne[GetBooksOutputBody](ctx, query, a.DB, input)
+		body, err := query.One(ctx, a.DB, input)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}

@@ -40,25 +40,30 @@ func (a *App) PostBooks(api huma.API) {
 		ON CONFLICT (name) DO NOTHING;;
 	`)
 
-	queryAuthors := a.Template.New("query_authors").MustParse(`
+	queryAuthors := sqlt.DestParam[uuid.UUID, []string](a.Template.New("query_authors").MustParse(`
 		SELECT id FROM authors WHERE name IN(
 		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
 			{{ $a }}
 		{{ end }});
-	`)
+	`))
 
-	insertBook := a.Template.New("insert_book").MustParse(`
+	insertBook := sqlt.DestParam[uuid.UUID, PostBooksInputBody](a.Template.New("insert_book").MustParse(`
 		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
 			({{ uuidv4 }},{{ .Title }},{{ .PublishedAt }}, {{ .NumberOfPages }})
 		RETURNING id;
-	`)
+	`))
 
-	insertBookAuthors := a.Template.New("insert_book_authors").MustParse(`
+	type InsertBookAuthor struct {
+		BookID    uuid.UUID
+		AuthorIDs []uuid.UUID
+	}
+
+	insertBookAuthors := sqlt.Param[InsertBookAuthor](a.Template.New("insert_book_authors").MustParse(`
 		INSERT INTO book_authors (book_id, author_id) VALUES
 		{{ range $i, $a := .AuthorIDs }} {{ if $i }}, {{ end }}
 			({{ $.BookID }}, {{ $a }})
 		{{ end }};
-	`)
+	`))
 
 	op := huma.Operation{
 		Method:          http.MethodPost,
@@ -78,11 +83,7 @@ func (a *App) PostBooks(api huma.API) {
 		)
 
 		err = sqlt.InTx(ctx, nil, a.DB, func(db sqlt.DB) error {
-			id, err = sqlt.FetchOne[uuid.UUID](ctx, insertBook, db, map[string]any{
-				"Title":         input.Body.Title,
-				"NumberOfPages": input.Body.NumberOfPages,
-				"PublishedAt":   input.Body.PublishedAt,
-			})
+			id, err = insertBook.One(ctx, db, input.Body)
 			if err != nil {
 				return err
 			}
@@ -92,14 +93,14 @@ func (a *App) PostBooks(api huma.API) {
 				return err
 			}
 
-			authorIDs, err := sqlt.FetchAll[uuid.UUID](ctx, queryAuthors, db, input.Body.Authors)
+			authorIDs, err := queryAuthors.All(ctx, db, input.Body.Authors)
 			if err != nil {
 				return err
 			}
 
-			_, err = insertBookAuthors.Exec(ctx, db, map[string]any{
-				"AuthorIDs": authorIDs,
-				"BookID":    id,
+			_, err = insertBookAuthors.Exec(ctx, db, InsertBookAuthor{
+				AuthorIDs: authorIDs,
+				BookID:    id,
 			})
 			if err != nil {
 				return err
