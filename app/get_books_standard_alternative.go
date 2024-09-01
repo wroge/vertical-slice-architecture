@@ -51,12 +51,12 @@ func (a *App) GetBooksStandardAlternative(api huma.API) {
 
 		if a.Dialect == Postgres {
 			filtered_books = filtered_books.Columns(
-				`to_char(published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at`,
+				`to_char(published_at, 'YYYY-MM-DD') AS published_at`,
 				"jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) AS authors",
 			)
 		} else {
 			filtered_books = filtered_books.Columns(
-				`strftime('%Y-%m-%dT%H:%M:%SZ', published_at) AS published_at`,
+				`strftime('%Y-%m-%d', published_at) AS published_at`,
 				"json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors",
 			)
 		}

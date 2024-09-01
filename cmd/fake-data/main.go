@@ -26,7 +26,7 @@ func main() {
 		books[i] = uuid.New()
 		title := gofakeit.Sentence(3)         // Generates a fake book title
 		numberOfPages := rand.IntN(900) + 100 // Random number between 100 and 999
-		publishedAt := randomDate().Format("2006-01-02")
+		publishedAt := randomDate().Format(time.DateOnly)
 
 		buffer.WriteString(fmt.Sprintf("INSERT INTO books (id, title, number_of_pages, published_at) VALUES ('%s', '%s', %d, '%s');\n",
 			books[i], title, numberOfPages, publishedAt))

@@ -14,10 +14,10 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
         WITH filtered_books AS (
             SELECT books.id, books.title, books.number_of_pages
                 {{ if Postgres }}
-                    , to_char(books.published_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS published_at
+                    , to_char(books.published_at, 'YYYY-MM-DD') AS published_at
                     , jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) AS authors
                 {{ else }}
-                    , strftime('%Y-%m-%dT%H:%M:%SZ', books.published_at) AS published_at
+                    , strftime('%Y-%m-%d', books.published_at) AS published_at
                     , json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors
                 {{ end }} 
             FROM books

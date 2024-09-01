@@ -17,7 +17,7 @@ import (
 
 type (
 	Book struct {
-		PublishedAt   time.Time          `json:"published_at"`
+		PublishedAt   string             `json:"published_at" format:"date"`
 		Title         string             `json:"title" doc:"Title"`
 		Authors       sqlt.Slice[Author] `json:"authors,omitempty"`
 		NumberOfPages int64              `json:"number_of_pages"`

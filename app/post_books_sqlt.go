@@ -13,10 +13,10 @@ import (
 func (a *App) PostBooks(api huma.API) {
 	type (
 		PostBooksInputBody struct {
-			PublishedAt   time.Time `json:"published_at" required:"true"`
-			Title         string    `json:"title" required:"true"`
-			Authors       []string  `json:"authors" required:"true"`
-			NumberOfPages int64     `json:"number_of_pages" required:"false"`
+			PublishedAt   string   `json:"published_at" format:"date" required:"true"`
+			Title         string   `json:"title" required:"true"`
+			Authors       []string `json:"authors" required:"true"`
+			NumberOfPages int64    `json:"number_of_pages" required:"false"`
 		}
 
 		PostBooksOutputBody struct {
