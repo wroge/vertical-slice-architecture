@@ -40,14 +40,14 @@ func (a *App) PostBooks(api huma.API) {
 		ON CONFLICT (name) DO NOTHING;;
 	`)
 
-	queryAuthors := sqlt.DestParam[uuid.UUID, []string](a.Template.New("query_authors").MustParse(`
+	queryAuthors := sqlt.TypedQuery[uuid.UUID, []string](a.Template.New("query_authors").MustParse(`
 		SELECT id FROM authors WHERE name IN(
 		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
 			{{ $a }}
 		{{ end }});
 	`))
 
-	insertBook := sqlt.DestParam[uuid.UUID, PostBooksInputBody](a.Template.New("insert_book").MustParse(`
+	insertBook := sqlt.TypedQuery[uuid.UUID, PostBooksInputBody](a.Template.New("insert_book").MustParse(`
 		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
 			({{ uuidv4 }},{{ .Title }},{{ .PublishedAt }}, {{ .NumberOfPages }})
 		RETURNING id;
@@ -58,7 +58,7 @@ func (a *App) PostBooks(api huma.API) {
 		AuthorIDs []uuid.UUID
 	}
 
-	insertBookAuthors := sqlt.Param[InsertBookAuthor](a.Template.New("insert_book_authors").MustParse(`
+	insertBookAuthors := sqlt.Typed[InsertBookAuthor](a.Template.New("insert_book_authors").MustParse(`
 		INSERT INTO book_authors (book_id, author_id) VALUES
 		{{ range $i, $a := .AuthorIDs }} {{ if $i }}, {{ end }}
 			({{ $.BookID }}, {{ $a }})
