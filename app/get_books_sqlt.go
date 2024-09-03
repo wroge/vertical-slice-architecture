@@ -22,14 +22,14 @@ func (a *App) GetBooksSqlt(api huma.API) {
 		)
 	`)
 
-	queryTotal := sqlt.TypedQuery[int64, *GetBooksInput](a.Template.New("query_total").MustParse(`
+	queryTotal := sqlt.MustType[int64, *GetBooksInput](a.Template.New("query_total").MustParse(`
 		SELECT COUNT(DISTINCT books.id) FROM books
 		LEFT JOIN book_authors ON book_authors.book_id = books.id
 		LEFT JOIN authors ON authors.id = book_authors.author_id
 		{{ with (lower .Search) }} WHERE {{ template "search_filter" . }}{{ end }};
 	`))
 
-	query := sqlt.TypedQuery[Book, *GetBooksInput](a.Template.New("query").MustParse(`
+	query := sqlt.MustType[Book, *GetBooksInput](a.Template.New("query").MustParse(`
 		SELECT
 			{{ Scan Dest.ID "books.id" }}
 			{{ ScanString Dest.Title ", books.title" }}

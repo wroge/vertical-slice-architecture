@@ -10,7 +10,7 @@ import (
 )
 
 func (a *App) GetBooksSqltAlternative(api huma.API) {
-	query := sqlt.TypedQuery[GetBooksOutputBody, *GetBooksInput](a.Template.New("query").MustParse(`
+	query := sqlt.MustType[GetBooksOutputBody, *GetBooksInput](a.Template.New("query").MustParse(`
         WITH filtered_books AS (
             SELECT books.id, books.title, books.number_of_pages
                 {{ if Postgres }}
