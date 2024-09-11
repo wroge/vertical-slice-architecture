@@ -35,6 +35,10 @@ func BenchGetBooks(b *testing.B, alt string, limit uint64) {
 		if err := json.NewDecoder(resp.Body).Decode(&output); err != nil {
 			b.Fatal(err)
 		}
+
+		if len(output.Books) != int(limit) {
+			b.Fatal(len(output.Books))
+		}
 	}
 }
 

@@ -11,9 +11,9 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	_ "modernc.org/sqlite"
 	"github.com/wroge/sqlt"
 	"github.com/wroge/vertical-slice-architecture/app"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -55,7 +55,9 @@ func main() {
 		hooks.OnStart(func() {
 			logger.Info("API started...")
 
-			server.ListenAndServe()
+			if err = server.ListenAndServe(); err != nil {
+				logger.Error(err.Error())
+			}
 		})
 	})
 

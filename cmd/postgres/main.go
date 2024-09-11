@@ -55,7 +55,9 @@ func main() {
 		hooks.OnStart(func() {
 			logger.Info("API started...")
 
-			server.ListenAndServe()
+			if err = server.ListenAndServe(); err != nil {
+				logger.Error(err.Error())
+			}
 		})
 	})
 
