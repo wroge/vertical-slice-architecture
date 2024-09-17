@@ -65,7 +65,7 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		body, err := query.One(ctx, a.DB, input)
+		body, err := query.First(ctx, a.DB, input)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}
