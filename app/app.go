@@ -47,22 +47,22 @@ func (a *App) Init(api huma.API, options *Options) {
 			},
 		}).
 		BeforeRun(func(r *sqlt.Runner) {
-			r.SetValue(startKey{}, time.Now())
+			r.Context = context.WithValue(r.Context, startKey{}, time.Now())
 		}).
 		AfterRun(func(err error, r *sqlt.Runner) error {
-			dur := time.Since(r.GetValue(startKey{}).(time.Time))
-			name := r.Template()
+			dur := time.Since(r.Context.Value(startKey{}).(time.Time))
+			name := r.Template.Name()
 
 			if err != nil {
 				// apply error logging here
-				a.Logger.Error(err.Error(), "template", name, "duration", dur, "sql", r.SQL(), "args", r.Args())
+				a.Logger.Error(err.Error(), "template", name, "duration", dur, "sql", string(r.SQL), "args", r.Args)
 
 				return err
 			}
 
 			if name != "data" {
 				// apply normal logging here
-				a.Logger.Info("query executed", "template", name, "duration", dur, "sql", r.SQL(), "args", r.Args())
+				a.Logger.Info("query executed", "template", name, "duration", dur, "sql", string(r.SQL), "args", r.Args)
 			}
 
 			return nil

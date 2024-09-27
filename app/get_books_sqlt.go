@@ -62,12 +62,17 @@ func (a *App) GetBooksSqlt(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		total, err := queryTotal.One(ctx, a.DB, input)
+		var (
+			total int64
+			books = make([]Book, 0, input.Limit)
+		)
+
+		err := queryTotal.ScanOne(ctx, a.DB, input, &total)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}
 
-		books, err := query.All(ctx, a.DB, input)
+		err = query.ScanAll(ctx, a.DB, input, &books)
 		if err != nil {
 			return nil, huma.Error500InternalServerError("internal error")
 		}
