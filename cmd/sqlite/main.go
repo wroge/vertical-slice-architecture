@@ -33,10 +33,13 @@ func main() {
 		}
 
 		a := app.App{
-			Dialect:  app.Sqlite,
-			Template: sqlt.New("db"),
-			DB:       db,
-			Logger:   logger,
+			Dialect: app.Sqlite,
+			Config: &sqlt.Config{
+				Placeholder: "?",
+				Positional:  false,
+			},
+			DB:     db,
+			Logger: logger,
 		}
 
 		router := http.NewServeMux()

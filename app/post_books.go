@@ -30,50 +30,30 @@ func (a *App) PostBooks(api huma.API) {
 		Output struct {
 			Body PostBooksOutputBody
 		}
+
+		InsertBookAuthor struct {
+			BookID    uuid.UUID
+			AuthorIDs []uuid.UUID
+		}
 	)
 
-	insertAuthors := a.Template.New("insert_authors").MustParse(`
-		INSERT INTO authors (id, name) VALUES
-		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
-			({{ uuidv4 }}, {{ $a }})
-		{{ end }}
-		ON CONFLICT (name) DO NOTHING;;
-	`)
+	insertAuthors := sqlt.Stmt[[]string](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_authors"))
 
-	queryAuthors := sqlt.MustType[uuid.UUID, []string](a.Template.New("query_authors").MustParse(`
-		SELECT id FROM authors WHERE name IN(
-		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
-			{{ $a }}
-		{{ end }});
-	`))
+	queryAuthors := sqlt.QueryStmt[[]string, uuid.UUID](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("query_authors"))
 
-	insertBook := sqlt.MustType[uuid.UUID, PostBooksInputBody](a.Template.New("insert_book").MustParse(`
-		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
-			({{ uuidv4 }},{{ .Title }},{{ .PublishedAt }}, {{ .NumberOfPages }})
-		RETURNING id;
-	`))
+	insertBook := sqlt.QueryStmt[PostBooksInputBody, uuid.UUID](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_book"))
 
-	type InsertBookAuthor struct {
-		BookID    uuid.UUID
-		AuthorIDs []uuid.UUID
-	}
-
-	insertBookAuthors := sqlt.MustType[any, InsertBookAuthor](a.Template.New("insert_book_authors").MustParse(`
-		INSERT INTO book_authors (book_id, author_id) VALUES
-		{{ range $i, $a := .AuthorIDs }} {{ if $i }}, {{ end }}
-			({{ $.BookID }}, {{ $a }})
-		{{ end }};
-	`))
+	insertBookAuthors := sqlt.Stmt[InsertBookAuthor](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_book_authors"))
 
 	op := huma.Operation{
 		Method:          http.MethodPost,
-		Path:            "/sqlt/books",
+		Path:            "/books",
 		DefaultStatus:   http.StatusCreated,
 		MaxBodyBytes:    1 << 20, // 1MB
 		BodyReadTimeout: time.Second / 2,
 		Errors:          []int{http.StatusInternalServerError},
-		Summary:         "Insert Book Sqlt",
-		Description:     "Insert Book Sqlt",
+		Summary:         "Insert Book",
+		Description:     "Insert Book",
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {

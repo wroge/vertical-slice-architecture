@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"html/template"
 	"log/slog"
-	"text/template"
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
@@ -29,46 +29,49 @@ type Options struct {
 }
 
 type App struct {
-	Template *sqlt.Template
-	DB       *sql.DB
-	Logger   *slog.Logger
-	Dialect  string
+	Config  *sqlt.Config
+	DB      *sql.DB
+	Logger  *slog.Logger
+	Dialect string
 }
 
 func (a *App) Init(api huma.API, options *Options) {
-	a.Template.
-		Funcs(sprig.TxtFuncMap()).
-		Funcs(template.FuncMap{
+	a.Config.Options = append(a.Config.Options,
+		sqlt.Funcs(sprig.TxtFuncMap()),
+		sqlt.Funcs(template.FuncMap{
 			Postgres: func() bool {
 				return a.Dialect == Postgres
 			},
 			Sqlite: func() bool {
 				return a.Dialect == Sqlite
 			},
-		}).
-		BeforeRun(func(r *sqlt.Runner) {
-			r.Context = context.WithValue(r.Context, startKey{}, time.Now())
-		}).
-		AfterRun(func(err error, r *sqlt.Runner) error {
-			dur := time.Since(r.Context.Value(startKey{}).(time.Time))
-			name := r.Template.Name()
+			"ScanAuthors": sqlt.ScanJSON[[]Author],
+			"ScanBooks":   sqlt.ScanJSON[[]Book],
+		}),
+	)
 
-			if err != nil {
-				// apply error logging here
-				a.Logger.Error(err.Error(), "template", name, "duration", dur, "sql", string(r.SQL), "args", r.Args)
+	a.Config.Context = func(ctx context.Context, runner sqlt.Runner) context.Context {
+		return context.WithValue(ctx, startKey{}, time.Now())
+	}
 
-				return err
-			}
+	a.Config.Log = func(ctx context.Context, err error, runner sqlt.Runner) {
+		dur := time.Since(ctx.Value(startKey{}).(time.Time))
+		name := runner.Template().Name()
 
-			if name != "data" {
-				// apply normal logging here
-				a.Logger.Info("query executed", "template", name, "duration", dur, "sql", string(r.SQL), "args", r.Args)
-			}
+		if err != nil {
+			// apply error logging here
+			a.Logger.Error(err.Error(), "name", name, "duration", dur, "sql", runner.SQL(), "args", runner.Args())
 
-			return nil
-		})
+			return
+		}
 
-	_, err := a.Template.New("create").MustParse(`
+		if name != "data" {
+			// apply normal logging here
+			a.Logger.Info("query executed", "name", name, "duration", dur, "sql", runner.SQL(), "args", runner.Args())
+		}
+	}
+
+	_, err := a.DB.Exec(`
 		CREATE TABLE IF NOT EXISTS books (
 			id TEXT PRIMARY KEY, 
 			title TEXT NOT NULL, 
@@ -86,24 +89,23 @@ func (a *App) Init(api huma.API, options *Options) {
 		);
 
 		DROP INDEX IF EXISTS idx_books_title;
-		CREATE INDEX IF NOT EXISTS idx_books_title ON books(LOWER(title));
+		CREATE INDEX idx_books_title ON books(LOWER(title));
 
 		DROP INDEX IF EXISTS idx_authors_name;
-		CREATE INDEX IF NOT EXISTS idx_authors_name ON authors(LOWER(name));
-	`).Exec(context.Background(), a.DB, nil)
+		CREATE INDEX idx_authors_name ON authors(LOWER(name));
+	`)
 	if err != nil {
 		a.Logger.Error(err.Error())
 	}
 
 	// add handlers here
 	a.PostBooks(api)
-	a.GetBooksSqlt(api)
 	a.GetBooksSqltAlternative(api)
-	a.GetBooksStandard(api)
-	a.GetBooksStandardAlternative(api)
 
-	_, err = a.Template.New("data").MustParse(data).Exec(context.Background(), a.DB, nil)
-	if err != nil {
-		a.Logger.Error(err.Error())
+	if options.Fill {
+		_, err = sqlt.Stmt[any](a.Config, sqlt.New("data"), sqlt.Parse(data)).Exec(context.Background(), a.DB, nil)
+		if err != nil {
+			a.Logger.Error("data already exists", "err", err)
+		}
 	}
 }

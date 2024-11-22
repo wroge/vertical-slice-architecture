@@ -33,10 +33,13 @@ func main() {
 		}
 
 		a := app.App{
-			Dialect:  app.Postgres,
-			Template: sqlt.New("db").Dollar(),
-			DB:       db,
-			Logger:   logger,
+			Dialect: app.Postgres,
+			Config: &sqlt.Config{
+				Placeholder: "$",
+				Positional:  true,
+			},
+			DB:     db,
+			Logger: logger,
 		}
 
 		router := http.NewServeMux()
