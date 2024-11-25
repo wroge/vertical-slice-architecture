@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"time"
@@ -45,8 +46,6 @@ func (a *App) Init(api huma.API, options *Options) {
 			Sqlite: func() bool {
 				return a.Dialect == Sqlite
 			},
-			"ScanAuthors": sqlt.ScanJSON[[]Author],
-			"ScanBooks":   sqlt.ScanJSON[[]Book],
 		}),
 	)
 
@@ -55,20 +54,23 @@ func (a *App) Init(api huma.API, options *Options) {
 	}
 
 	a.Config.Log = func(ctx context.Context, err error, runner sqlt.Runner) {
-		dur := time.Since(ctx.Value(startKey{}).(time.Time))
-		name := runner.Template().Name()
+		var attrs []slog.Attr
 
 		if err != nil {
-			// apply error logging here
-			a.Logger.Error(err.Error(), "name", name, "duration", dur, "sql", runner.SQL(), "args", runner.Args())
-
-			return
+			attrs = append(attrs, slog.String("err", err.Error()))
 		}
 
-		if name != "data" {
-			// apply normal logging here
-			a.Logger.Info("query executed", "name", name, "duration", dur, "sql", runner.SQL(), "args", runner.Args())
+		if start, ok := ctx.Value(startKey{}).(time.Time); ok {
+			attrs = append(attrs, slog.Duration("duration", time.Since(start)))
 		}
+
+		attrs = append(attrs,
+			slog.String("sql", runner.SQL().String()),
+			slog.Any("args", runner.Args()),
+			slog.String("location", fmt.Sprintf("[%s:%d]", runner.File(), runner.Line())),
+		)
+
+		a.Logger.LogAttrs(ctx, slog.LevelInfo, "log stmt", attrs...)
 	}
 
 	_, err := a.DB.Exec(`

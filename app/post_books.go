@@ -37,13 +37,33 @@ func (a *App) PostBooks(api huma.API) {
 		}
 	)
 
-	insertAuthors := sqlt.Stmt[[]string](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_authors"))
+	insertAuthors := sqlt.Stmt[[]string](a.Config, sqlt.Parse(`
+		INSERT INTO authors (id, name) VALUES
+		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
+			({{ uuidv4 }}, {{ $a }})
+		{{ end }}
+		ON CONFLICT (name) DO NOTHING;
+	`))
 
-	queryAuthors := sqlt.QueryStmt[[]string, uuid.UUID](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("query_authors"))
+	queryAuthors := sqlt.QueryStmt[[]string, uuid.UUID](a.Config, sqlt.Parse(`
+		SELECT id FROM authors WHERE name IN(
+		{{ range $i, $a := . }} {{ if $i }}, {{ end }}
+			{{ $a }}
+		{{ end }});
+	`))
 
-	insertBook := sqlt.QueryStmt[PostBooksInputBody, uuid.UUID](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_book"))
+	insertBook := sqlt.QueryStmt[PostBooksInputBody, uuid.UUID](a.Config, sqlt.Parse(`
+		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
+			({{ uuidv4 }},{{ .Title }},{{ .PublishedAt }}, {{ .NumberOfPages }})
+		RETURNING id;
+	`))
 
-	insertBookAuthors := sqlt.Stmt[InsertBookAuthor](a.Config, sqlt.ParseFiles("app/sql.go.tpl"), sqlt.Lookup("insert_book_authors"))
+	insertBookAuthors := sqlt.Stmt[InsertBookAuthor](a.Config, sqlt.Parse(`
+		INSERT INTO book_authors (book_id, author_id) VALUES
+		{{ range $i, $a := .AuthorIDs }} {{ if $i }}, {{ end }}
+			({{ $.BookID }}, {{ $a }})
+		{{ end }};
+	`))
 
 	op := huma.Operation{
 		Method:          http.MethodPost,
