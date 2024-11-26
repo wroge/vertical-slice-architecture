@@ -56,10 +56,6 @@ func (a *App) Init(api huma.API, options *Options) {
 	a.Config.Log = func(ctx context.Context, err error, runner sqlt.Runner) {
 		var attrs []slog.Attr
 
-		if err != nil {
-			attrs = append(attrs, slog.String("err", err.Error()))
-		}
-
 		if start, ok := ctx.Value(startKey{}).(time.Time); ok {
 			attrs = append(attrs, slog.Duration("duration", time.Since(start)))
 		}
@@ -70,7 +66,11 @@ func (a *App) Init(api huma.API, options *Options) {
 			slog.String("location", fmt.Sprintf("[%s:%d]", runner.File(), runner.Line())),
 		)
 
-		a.Logger.LogAttrs(ctx, slog.LevelInfo, "log stmt", attrs...)
+		if err != nil {
+			a.Logger.LogAttrs(ctx, slog.LevelError, err.Error(), attrs...)
+		} else {
+			a.Logger.LogAttrs(ctx, slog.LevelInfo, "log stmt", attrs...)
+		}
 	}
 
 	_, err := a.DB.Exec(`
