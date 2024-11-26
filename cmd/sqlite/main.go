@@ -34,9 +34,8 @@ func main() {
 
 		a := app.App{
 			Dialect: app.Sqlite,
-			Config: &sqlt.Config{
+			Config: sqlt.Config{
 				Placeholder: "?",
-				Positional:  false,
 			},
 			DB:     db,
 			Logger: logger,

@@ -30,14 +30,14 @@ type Options struct {
 }
 
 type App struct {
-	Config  *sqlt.Config
+	Config  sqlt.Config
 	DB      *sql.DB
 	Logger  *slog.Logger
 	Dialect string
 }
 
 func (a *App) Init(api huma.API, options *Options) {
-	a.Config.Options = append(a.Config.Options,
+	a.Config.TemplateOptions = append(a.Config.TemplateOptions,
 		sqlt.Funcs(sprig.TxtFuncMap()),
 		sqlt.Funcs(template.FuncMap{
 			Postgres: func() bool {
@@ -49,27 +49,27 @@ func (a *App) Init(api huma.API, options *Options) {
 		}),
 	)
 
-	a.Config.Context = func(ctx context.Context, runner sqlt.Runner) context.Context {
-		return context.WithValue(ctx, startKey{}, time.Now())
+	a.Config.Start = func(runner *sqlt.Runner) {
+		runner.Context = context.WithValue(runner.Context, startKey{}, time.Now())
 	}
 
-	a.Config.Log = func(ctx context.Context, err error, runner sqlt.Runner) {
+	a.Config.End = func(err error, runner *sqlt.Runner) {
 		var attrs []slog.Attr
 
-		if start, ok := ctx.Value(startKey{}).(time.Time); ok {
+		if start, ok := runner.Context.Value(startKey{}).(time.Time); ok {
 			attrs = append(attrs, slog.Duration("duration", time.Since(start)))
 		}
 
 		attrs = append(attrs,
-			slog.String("sql", runner.SQL().String()),
-			slog.Any("args", runner.Args()),
-			slog.String("location", fmt.Sprintf("[%s:%d]", runner.File(), runner.Line())),
+			slog.String("sql", runner.SQL.String()),
+			slog.Any("args", runner.Args),
+			slog.String("location", fmt.Sprintf("[%s:%d]", runner.File, runner.Line)),
 		)
 
 		if err != nil {
-			a.Logger.LogAttrs(ctx, slog.LevelError, err.Error(), attrs...)
+			a.Logger.LogAttrs(runner.Context, slog.LevelError, err.Error(), attrs...)
 		} else {
-			a.Logger.LogAttrs(ctx, slog.LevelInfo, "log stmt", attrs...)
+			a.Logger.LogAttrs(runner.Context, slog.LevelInfo, "log stmt", attrs...)
 		}
 	}
 

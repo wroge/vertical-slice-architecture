@@ -34,9 +34,8 @@ func main() {
 
 		a := app.App{
 			Dialect: app.Postgres,
-			Config: &sqlt.Config{
-				Placeholder: "$",
-				Positional:  true,
+			Config: sqlt.Config{
+				Placeholder: "$%d",
 			},
 			DB:     db,
 			Logger: logger,

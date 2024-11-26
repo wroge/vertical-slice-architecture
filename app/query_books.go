@@ -44,7 +44,8 @@ type (
 )
 
 func (a *App) GetBooksSqltAlternative(api huma.API) {
-	query := sqlt.QueryStmt[*GetBooksInput, GetBooksOutputBody](a.Config,
+	query := sqlt.QueryStmt[*GetBooksInput, GetBooksOutputBody](
+		a.Config,
 		sqlt.Funcs(template.FuncMap{"ScanBooks": sqlt.ScanJSON[[]Book]}),
 		sqlt.Parse(`
 			WITH filtered_books AS (
