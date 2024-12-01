@@ -63,7 +63,7 @@ func (a *App) Init(api huma.API, options *Options) {
 		attrs = append(attrs,
 			slog.String("sql", runner.SQL.String()),
 			slog.Any("args", runner.Args),
-			slog.String("location", fmt.Sprintf("[%s:%d]", runner.File, runner.Line)),
+			slog.String("location", fmt.Sprintf("[%s]", runner.Location)),
 		)
 
 		if err != nil {
