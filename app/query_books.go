@@ -50,31 +50,37 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 		sqlt.Parse(`
 			WITH filtered_books AS (
 				SELECT books.id, books.title, books.number_of_pages
-					{{ if Postgres }}
+					{{ if eq Dialect "postgres" }}
 						, to_char(books.published_at, 'YYYY-MM-DD') AS published_at
 						, jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) AS authors
-					{{ else }}
+					{{ else if eq Dialect "sqlite" }}
 						, strftime('%Y-%m-%d', books.published_at) AS published_at
 						, json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors
+					{{ else }}
+						{{ fail "invalid dialect" }}
 					{{ end }} 
 				FROM books
 				LEFT JOIN book_authors ON book_authors.book_id = books.id
 				LEFT JOIN authors ON authors.id = book_authors.author_id
 				{{ with (lower .Search) }} 
 					WHERE     
-					{{ if Postgres }}
+					{{ if eq Dialect "postgres" }}
 						POSITION({{ . }} IN LOWER(books.title)) > 0
-					{{ else }} 
+					{{ else if eq Dialect "sqlite" }} 
 						INSTR(LOWER(books.title), {{ . }}) 
+					{{ else }}
+						{{ fail "invalid dialect" }}
 					{{ end }}
 					OR EXISTS (
 						SELECT 1 FROM book_authors JOIN authors ON authors.id = book_authors.author_id
 						WHERE book_authors.book_id = books.id
 						AND (
-							{{ if Postgres }} 
+							{{ if eq Dialect "postgres" }} 
 								POSITION({{ . }} IN LOWER(authors.name)) > 0
-							{{ else }} 
+							{{ else if eq Dialect "sqlite" }} 
 								INSTR(LOWER(authors.name), {{ . }}) 
+							{{ else }}
+								{{ fail "invalid dialect" }}
 							{{ end }}
 						)
 					)
@@ -95,10 +101,12 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 			)
 			SELECT
 				{{ ScanInt64 Dest.Total "(SELECT COUNT(*) FROM filtered_books)" }}
-				{{ if Postgres }}
+				{{ if eq Dialect "postgres" }}
 					{{ ScanBooks Dest.Books ", jsonb_agg(jsonb_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))" }} 
-				{{ else }}
+				{{ else if eq Dialect "sqlite" }}
 					{{ ScanBooks Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
+				{{ else }}
+					{{ fail "invalid dialect" }}
 				{{ end }}
 			FROM paginated_books;
 		`),

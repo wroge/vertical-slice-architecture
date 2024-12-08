@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -33,9 +34,15 @@ func main() {
 		}
 
 		a := app.App{
-			Dialect: app.Postgres,
 			Config: sqlt.Config{
 				Placeholder: "$%d",
+				TemplateOptions: []sqlt.TemplateOption{
+					sqlt.Funcs(template.FuncMap{
+						"Dialect": func() string {
+							return "postgres"
+						},
+					}),
+				},
 			},
 			DB:     db,
 			Logger: logger,

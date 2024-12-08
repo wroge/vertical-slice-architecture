@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"time"
 
@@ -19,34 +18,20 @@ var data string
 
 type startKey struct{}
 
-const (
-	Postgres = "Postgres"
-	Sqlite   = "Sqlite"
-)
-
 type Options struct {
 	Port int  `help:"Port to listen on" short:"p" default:"8080"`
 	Fill bool `help:"Fill with fake data" short:"f" default:"false"`
 }
 
 type App struct {
-	Config  sqlt.Config
-	DB      *sql.DB
-	Logger  *slog.Logger
-	Dialect string
+	Config sqlt.Config
+	DB     *sql.DB
+	Logger *slog.Logger
 }
 
 func (a *App) Init(api huma.API, options *Options) {
 	a.Config.TemplateOptions = append(a.Config.TemplateOptions,
 		sqlt.Funcs(sprig.TxtFuncMap()),
-		sqlt.Funcs(template.FuncMap{
-			Postgres: func() bool {
-				return a.Dialect == Postgres
-			},
-			Sqlite: func() bool {
-				return a.Dialect == Sqlite
-			},
-		}),
 	)
 
 	a.Config.Start = func(runner *sqlt.Runner) {
