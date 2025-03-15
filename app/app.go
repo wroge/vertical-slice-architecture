@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/danielgtaylor/huma/v2"
@@ -30,32 +29,16 @@ type App struct {
 }
 
 func (a *App) Init(api huma.API, options *Options) {
-	a.Config.TemplateOptions = append(a.Config.TemplateOptions,
+	a.Config.Templates = append(a.Config.Templates,
 		sqlt.Funcs(sprig.TxtFuncMap()),
 	)
 
-	a.Config.Start = func(runner *sqlt.Runner) {
-		runner.Context = context.WithValue(runner.Context, startKey{}, time.Now())
-	}
-
-	a.Config.End = func(err error, runner *sqlt.Runner) {
-		var attrs []slog.Attr
-
-		if start, ok := runner.Context.Value(startKey{}).(time.Time); ok {
-			attrs = append(attrs, slog.Duration("duration", time.Since(start)))
+	a.Config.Log = func(ctx context.Context, info sqlt.Info) {
+		if info.Template == "data" {
+			return
 		}
 
-		attrs = append(attrs,
-			slog.String("sql", runner.SQL.String()),
-			slog.Any("args", runner.Args),
-			slog.String("location", fmt.Sprintf("[%s]", runner.Location)),
-		)
-
-		if err != nil {
-			a.Logger.LogAttrs(runner.Context, slog.LevelError, err.Error(), attrs...)
-		} else {
-			a.Logger.LogAttrs(runner.Context, slog.LevelInfo, "log stmt", attrs...)
-		}
+		fmt.Println(info.SQL, info.Args, info.Location, info.Template, info.Err)
 	}
 
 	_, err := a.DB.Exec(`
@@ -86,11 +69,11 @@ func (a *App) Init(api huma.API, options *Options) {
 	}
 
 	// add handlers here
-	a.PostBooks(api)
-	a.GetBooksSqltAlternative(api)
+	a.InsertBook(api)
+	a.QueryBooks(api)
 
 	if options.Fill {
-		_, err = sqlt.Stmt[any](a.Config, sqlt.New("data"), sqlt.Parse(data)).Exec(context.Background(), a.DB, nil)
+		_, err = sqlt.Exec[any](a.Config, sqlt.Name("data"), sqlt.Parse(data)).Exec(context.Background(), a.DB, nil)
 		if err != nil {
 			a.Logger.Error("data already exists", "err", err)
 		}

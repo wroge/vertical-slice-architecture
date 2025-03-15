@@ -36,7 +36,7 @@ func main() {
 		a := app.App{
 			Config: sqlt.Config{
 				Placeholder: "?",
-				TemplateOptions: []sqlt.TemplateOption{
+				Templates: []sqlt.Template{
 					sqlt.Funcs(template.FuncMap{
 						"Dialect": func() string {
 							return "sqlite"

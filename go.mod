@@ -1,6 +1,6 @@
 module github.com/wroge/vertical-slice-architecture
 
-go 1.23.0
+go 1.23.5
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -8,7 +8,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.22.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/wroge/sqlt v0.1.13
+	github.com/wroge/sqlt v0.2.0-alpha.3
 	modernc.org/sqlite v1.32.0
 )
 
@@ -16,6 +16,7 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/safehtml v0.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"net/http"
-	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -43,19 +42,24 @@ type (
 	}
 )
 
-func (a *App) GetBooksSqltAlternative(api huma.API) {
-	query := sqlt.QueryStmt[*GetBooksInput, GetBooksOutputBody](
+func (a *App) QueryBooks(api huma.API) {
+	query := sqlt.First[*GetBooksInput, GetBooksOutputBody](
 		a.Config,
-		sqlt.Funcs(template.FuncMap{"ScanBooks": sqlt.ScanJSON[[]Book]}),
 		sqlt.Parse(`
 			WITH filtered_books AS (
 				SELECT books.id, books.title, books.number_of_pages
 					{{ if eq Dialect "postgres" }}
 						, to_char(books.published_at, 'YYYY-MM-DD') AS published_at
-						, jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) AS authors
+						, CASE 
+							WHEN COUNT(authors.id) = 0 THEN NULL 
+							ELSE jsonb_agg(jsonb_build_object('id', authors.id, 'name', authors.name)) 
+						END AS authors
 					{{ else if eq Dialect "sqlite" }}
 						, strftime('%Y-%m-%d', books.published_at) AS published_at
-						, json_group_array(json_object('id', authors.id, 'name', authors.name)) AS authors
+						, CASE 
+							WHEN COUNT(authors.id) = 0 THEN NULL 
+							ELSE json_group_array(json_object('id', authors.id, 'name', authors.name)) 
+						END AS authors
 					{{ else }}
 						{{ fail "invalid dialect" }}
 					{{ end }} 
@@ -100,14 +104,30 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 				{{ end }}
 			)
 			SELECT
-				{{ ScanInt64 Dest.Total "(SELECT COUNT(*) FROM filtered_books)" }}
+				(SELECT COUNT(*) FROM filtered_books) {{ Scan "Total" }}
 				{{ if eq Dialect "postgres" }}
-					{{ ScanBooks Dest.Books ", jsonb_agg(jsonb_build_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', paginated_books.authors))" }} 
+					, COALESCE(
+						jsonb_agg(jsonb_build_object(
+							'id', paginated_books.id, 
+							'title', paginated_books.title, 
+							'number_of_pages', paginated_books.number_of_pages, 
+							'published_at', paginated_books.published_at, 
+							'authors', paginated_books.authors
+						)) FILTER (WHERE paginated_books.id IS NOT NULL), '[]'::jsonb
+					)
 				{{ else if eq Dialect "sqlite" }}
-					{{ ScanBooks Dest.Books ", json_group_array(json_object('id', paginated_books.id, 'title', paginated_books.title, 'number_of_pages', paginated_books.number_of_pages, 'published_at', paginated_books.published_at, 'authors', json(paginated_books.authors)))" }} 
+					, COALESCE(
+						json_group_array(json_object(
+							'id', paginated_books.id, 
+							'title', paginated_books.title, 
+							'number_of_pages', paginated_books.number_of_pages, 
+							'published_at', paginated_books.published_at, 
+							'authors', json(paginated_books.authors)
+						)), '[]'
+					)
 				{{ else }}
 					{{ fail "invalid dialect" }}
-				{{ end }}
+				{{ end }} {{ ScanJSON "Books" }}
 			FROM paginated_books;
 		`),
 	)
@@ -124,9 +144,9 @@ func (a *App) GetBooksSqltAlternative(api huma.API) {
 	}
 
 	huma.Register(api, op, func(ctx context.Context, input *GetBooksInput) (*GetBooksOutput, error) {
-		body, err := query.First(ctx, a.DB, input)
+		body, err := query.Exec(ctx, a.DB, input)
 		if err != nil {
-			return nil, huma.Error500InternalServerError("internal error")
+			return nil, huma.Error500InternalServerError(err.Error())
 		}
 
 		return &GetBooksOutput{
