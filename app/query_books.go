@@ -104,7 +104,7 @@ func (a *App) QueryBooks(api huma.API) {
 				{{ end }}
 			)
 			SELECT
-				(SELECT COUNT(*) FROM filtered_books) {{ Scan "Total" }}
+				(SELECT COUNT(*) FROM filtered_books) as total
 				{{ if eq Dialect "postgres" }}
 					, COALESCE(
 						jsonb_agg(jsonb_build_object(
@@ -114,7 +114,7 @@ func (a *App) QueryBooks(api huma.API) {
 							'published_at', paginated_books.published_at, 
 							'authors', paginated_books.authors
 						)) FILTER (WHERE paginated_books.id IS NOT NULL), '[]'::jsonb
-					)
+					) as books
 				{{ else if eq Dialect "sqlite" }}
 					, COALESCE(
 						json_group_array(json_object(
@@ -124,10 +124,10 @@ func (a *App) QueryBooks(api huma.API) {
 							'published_at', paginated_books.published_at, 
 							'authors', json(paginated_books.authors)
 						)), '[]'
-					)
+					) as books
 				{{ else }}
 					{{ fail "invalid dialect" }}
-				{{ end }} {{ ScanJSON "Books" }}
+				{{ end }}
 			FROM paginated_books;
 		`),
 	)
