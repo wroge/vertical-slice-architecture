@@ -8,7 +8,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.22.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.6.0
-	github.com/wroge/sqlt v0.3.4
+	github.com/wroge/sqlt v0.3.5
 	modernc.org/sqlite v1.36.1
 )
 
