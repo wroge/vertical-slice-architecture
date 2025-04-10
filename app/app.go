@@ -15,8 +15,6 @@ import (
 //go:embed data.sql
 var data string
 
-type startKey struct{}
-
 type Options struct {
 	Port int  `help:"Port to listen on" short:"p" default:"8080"`
 	Fill bool `help:"Fill with fake data" short:"f" default:"false"`
