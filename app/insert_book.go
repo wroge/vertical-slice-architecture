@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"time"
 
@@ -31,49 +31,35 @@ func (a *App) InsertBook(api huma.API) {
 		Output struct {
 			Body PostBooksOutputBody
 		}
+
+		BookAuthors struct {
+			BookID    uuid.UUID
+			AuthorIDs []uuid.UUID
+		}
 	)
 
-	insert := sqlt.Transaction(
-		nil,
-		sqlt.Exec[PostBooksInputBody](a.Config, sqlt.Parse(`
-				{{ if .Authors }}
-					INSERT INTO authors (id, name) VALUES
-						{{ range $i, $a := .Authors }} 
-							{{ if $i }}, {{ end }}
-							({{ uuidv4 }}, {{ $a }})
-						{{ end }}
-					ON CONFLICT (name) DO NOTHING;
-				{{ end }}
-			`),
-		),
-		sqlt.All[PostBooksInputBody, uuid.UUID](a.Config, sqlt.Name("AuthorIDs"), sqlt.Parse(`
-				{{ if .Authors }}
-					SELECT id FROM authors WHERE name IN(
-						{{ range $i, $a := .Authors }} 
-							{{ if $i }}, {{ end }}
-							{{ $a }}
-						{{ end }}
-					);
-				{{ end }}
-			`),
-		),
-		sqlt.One[PostBooksInputBody, uuid.UUID](a.Config, sqlt.Name("BookID"), sqlt.Parse(`
-				INSERT INTO books (id, title, published_at, number_of_pages) VALUES
-					({{ uuidv4 }}, {{ .Title }}, {{ .PublishedAt }}, {{ .NumberOfPages }})
-				RETURNING id;
-			`),
-		),
-		sqlt.Exec[PostBooksInputBody](a.Config, sqlt.Parse(`
-				{{ if .Authors }}
-					INSERT INTO book_authors (book_id, author_id) VALUES
-					{{ range $i, $a := (Context "AuthorIDs") }} 
-						{{ if $i }}, {{ end }}
-						({{ Context "BookID" }}, {{ $a }})
-					{{ end }};
-				{{ end }}
-			`),
-		),
-	)
+	insertAuthors := sqlt.All[[]string, uuid.UUID](a.Config, sqlt.Parse(`
+		INSERT INTO authors (id, name) VALUES
+			{{ range $i, $a := . }} 
+				{{ if $i }}, {{ end }}
+				({{ uuidv4 }}, {{ $a }})
+			{{ end }}
+		ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id;
+	`))
+
+	insertBook := sqlt.One[PostBooksInputBody, uuid.UUID](a.Config, sqlt.Parse(`
+		INSERT INTO books (id, title, published_at, number_of_pages) VALUES
+			({{ uuidv4 }}, {{ .Title }}, {{ .PublishedAt }}, {{ .NumberOfPages }})
+		RETURNING id;
+	`))
+
+	insertBookAuthors := sqlt.Exec[BookAuthors](a.Config, sqlt.Parse(`
+		INSERT INTO book_authors (book_id, author_id) VALUES
+		{{ range $i, $a := .AuthorIDs }} 
+			{{ if $i }}, {{ end }}
+			({{ $.BookID }}, {{ $a }})
+		{{ end }};
+	`))
 
 	op := huma.Operation{
 		Method:          http.MethodPost,
@@ -86,17 +72,49 @@ func (a *App) InsertBook(api huma.API) {
 		Description:     "Insert Book",
 	}
 
-	huma.Register(api, op, func(ctx context.Context, input *Input) (*Output, error) {
-		ctx, err := insert.Exec(ctx, a.DB, input.Body)
+	huma.Register(api, op, func(ctx context.Context, input *Input) (output *Output, err error) {
+		tx, err := a.DB.BeginTx(ctx, nil)
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
+		}
 
-			return nil, huma.Error500InternalServerError("internal error")
+		defer func() {
+			if err != nil {
+				err = errors.Join(err, tx.Rollback())
+			} else {
+				err = tx.Commit()
+			}
+
+			if err != nil {
+				a.Logger.Info("insert book", "err", err.Error())
+
+				err = huma.Error500InternalServerError("server error")
+			}
+		}()
+
+		id, err := insertBook.Exec(ctx, tx, input.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(input.Body.Authors) > 0 {
+			authors, err := insertAuthors.Exec(ctx, tx, input.Body.Authors)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = insertBookAuthors.Exec(ctx, tx, BookAuthors{
+				BookID:    id,
+				AuthorIDs: authors,
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &Output{
 			Body: PostBooksOutputBody{
-				ID: ctx.Value(sqlt.ContextKey("BookID")).(uuid.UUID),
+				ID: id,
 			},
 		}, nil
 	})
