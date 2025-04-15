@@ -104,7 +104,7 @@ func (a *App) QueryBooks(api huma.API) {
 				{{ end }}
 			)
 			SELECT
-				(SELECT COUNT(*) FROM filtered_books)		{{ ScanInt "Total" }}
+				(SELECT COUNT(*) FROM filtered_books)		{{ Scan "Total" }}
 				{{ if eq Dialect "postgres" }}
 					, COALESCE(
 						jsonb_agg(jsonb_build_object(
