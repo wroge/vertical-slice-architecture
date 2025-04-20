@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/danielgtaylor/huma/v2 v2.32.0
+	github.com/go-sqlt/sqlt v0.3.18
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	modernc.org/sqlite v1.37.0
