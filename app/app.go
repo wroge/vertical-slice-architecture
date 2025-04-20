@@ -9,7 +9,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/wroge/sqlt"
+	"github.com/go-sqlt/sqlt"
 )
 
 //go:embed data.sql

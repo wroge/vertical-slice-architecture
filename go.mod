@@ -8,7 +8,6 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.32.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
-	github.com/wroge/sqlt v0.3.14
 	modernc.org/sqlite v1.37.0
 )
 
@@ -40,7 +39,7 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	modernc.org/libc v1.62.1 // indirect
+	modernc.org/libc v1.63.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.9.1 // indirect
+	modernc.org/memory v1.10.0 // indirect
 )

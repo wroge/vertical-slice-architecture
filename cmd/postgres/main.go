@@ -6,14 +6,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	"github.com/go-sqlt/sqlt"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/wroge/sqlt"
 	"github.com/wroge/vertical-slice-architecture/app"
 )
 
@@ -34,16 +33,7 @@ func main() {
 		}
 
 		a := app.App{
-			Config: sqlt.Config{
-				Placeholder: "$%d",
-				Templates: []sqlt.Template{
-					sqlt.Funcs(template.FuncMap{
-						"Dialect": func() string {
-							return "postgres"
-						},
-					}),
-				},
-			},
+			Config: sqlt.Configure(sqlt.Postgres()),
 			DB:     db,
 			Logger: logger,
 		}

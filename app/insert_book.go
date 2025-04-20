@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/go-sqlt/sqlt"
 	"github.com/google/uuid"
-	"github.com/wroge/sqlt"
 )
 
 func (a *App) InsertBook(api huma.API) {

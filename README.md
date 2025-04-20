@@ -1,6 +1,6 @@
 # Vertical Slice Architecture
 
-This repository showcases how to build a Vertical Slice API that supports multiple SQL dialects using [huma](https://github.com/danielgtaylor/huma) and [sqlt](https://github.com/wroge/sqlt).
+This repository showcases how to build a Vertical Slice API that supports multiple SQL dialects using [huma](https://github.com/danielgtaylor/huma) and [sqlt](https://github.com/go-sqlt/sqlt).
 
 ```go
 // Run as local In-memory sqlite app and fill with fake data

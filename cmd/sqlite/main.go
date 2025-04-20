@@ -6,13 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"text/template"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/wroge/sqlt"
+	"github.com/go-sqlt/sqlt"
 	"github.com/wroge/vertical-slice-architecture/app"
 	_ "modernc.org/sqlite"
 )
@@ -34,16 +33,7 @@ func main() {
 		}
 
 		a := app.App{
-			Config: sqlt.Config{
-				Placeholder: "?",
-				Templates: []sqlt.Template{
-					sqlt.Funcs(template.FuncMap{
-						"Dialect": func() string {
-							return "sqlite"
-						},
-					}),
-				},
-			},
+			Config: sqlt.Configure(sqlt.Sqlite()),
 			DB:     db,
 			Logger: logger,
 		}
