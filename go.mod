@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/danielgtaylor/huma/v2 v2.32.0
-	github.com/go-sqlt/sqlt v0.3.18
+	github.com/go-sqlt/sqlt v0.3.20
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	modernc.org/sqlite v1.37.0
@@ -18,6 +18,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/safehtml v0.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect

@@ -33,7 +33,7 @@ func main() {
 		}
 
 		a := app.App{
-			Config: sqlt.Configure(sqlt.Sqlite()),
+			Config: sqlt.Sqlite(),
 			DB:     db,
 			Logger: logger,
 		}

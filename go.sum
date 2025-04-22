@@ -20,8 +20,10 @@ github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkp
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
-github.com/go-sqlt/sqlt v0.3.18 h1:WDABIRspedhl3WKW3NfG7WusQ0uQHMJ7GmKvdHRNUX4=
-github.com/go-sqlt/sqlt v0.3.18/go.mod h1:HpuKfV/UvIpVqXpAnJOx+Y7WQRZhNEpmovhKjVSeo50=
+github.com/go-sqlt/sqlt v0.3.20 h1:aDoy8+Y/TD7Dmtk1+Ij3LXMUzBcYIxfDQTiVDdvWqN0=
+github.com/go-sqlt/sqlt v0.3.20/go.mod h1:H4OQpcf4w7N5X8uuxYHVUcudW6YUQmL5wbRgF8NdK88=
+github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
+github.com/goccy/go-json v0.10.5/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
 github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e h1:ijClszYn+mADRFY17kjQEVQ1XRhq2/JR1M3sGqeJoxs=

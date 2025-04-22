@@ -33,7 +33,7 @@ func main() {
 		}
 
 		a := app.App{
-			Config: sqlt.Configure(sqlt.Postgres()),
+			Config: sqlt.Postgres(),
 			DB:     db,
 			Logger: logger,
 		}

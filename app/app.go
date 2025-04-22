@@ -27,9 +27,7 @@ type App struct {
 }
 
 func (a *App) Init(api huma.API, options *Options) {
-	a.Config.Templates = append(a.Config.Templates,
-		sqlt.Funcs(sprig.TxtFuncMap()),
-	)
+	a.Config = a.Config.With(sqlt.Funcs(sprig.TxtFuncMap()))
 
 	a.Config.Log = func(ctx context.Context, info sqlt.Info) {
 		if info.Template == "data" {
